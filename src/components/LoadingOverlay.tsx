@@ -25,10 +25,10 @@ export default function LoadingOverlay() {
           <div className="absolute inset-0 border-4 border-black/10 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-black rounded-full border-t-transparent animate-spin"></div>
         </div>
-        <div className="h-10 overflow-hidden relative flex items-center justify-center">
+        <div className="min-h-[5rem] relative flex items-center justify-center py-2 px-1">
           <p 
             key={textIndex} 
-            className="text-xl font-black text-black italic animate-text-slide"
+            className="text-xl font-black text-black italic animate-text-slide leading-tight"
           >
             {LOADING_TEXTS[textIndex]}
           </p>
