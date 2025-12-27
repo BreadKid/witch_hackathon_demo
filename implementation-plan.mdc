@@ -39,6 +39,8 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 8. Optimize desktop layout by increasing sidebar width and scaling content. **Done**
 9. Update preference options: remove "美食" and "酒吧", add "图书馆". **Done**
 10. Refine mobile font sizes and spacing for better readability. **Done**
+11. Reduce mobile operational panel height to 60% and further scale down fonts. **Done**
+12. Adjust "寻找地点！" button to fit content with appropriate padding. **Done**
 
 ## Work Log (UI Redesign)
 - Steps 1-6: Implemented a complete UI overhaul using a "neo-brutalism" aesthetic.
@@ -46,4 +48,6 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 - Step 8: Adjusted desktop styles: increased sidebar width to 500px, scaled up titles, inputs, and buttons for better visibility on larger screens.
 - Step 9: Updated preference options based on user feedback, replacing "美食" and "酒吧" with "图书馆".
 - Step 10: Optimized mobile UI by reducing font sizes for headers, inputs, and buttons while maintaining the bold "neo-brutalism" style.
+- Step 11: Adjusted mobile layout: set panel height to 60%, reduced padding (`p-5`), and further scaled down font sizes (title to `4xl`, inputs to `text-base`, buttons to `text-xl`) to ensure content fits without excessive scrolling.
+- Step 12: Redesigned the search button to no longer be full-width, using `px-10` padding to create a balanced, "breathing" size based on the text content.
 - Colors: Main background set to yellow (#FCE682), using black borders and hard shadows throughout for a sticker-like feel.
