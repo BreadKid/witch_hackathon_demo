@@ -328,7 +328,7 @@ export default function Home() {
 
           {/* 偏好选择 */}
           <div className="space-y-4 md:space-y-6">
-            <div className="flex gap-4 md:gap-6 overflow-x-auto py-1 no-scrollbar">
+            <div className="flex gap-4 md:gap-6 overflow-x-auto py-3 md:py-4 no-scrollbar">
               {PREFERENCE_OPTIONS.map((opt) => (
                 <div key={opt.label} className="flex flex-col items-center gap-2 md:gap-4 shrink-0">
                   <button
@@ -366,7 +366,7 @@ export default function Home() {
               disabled={isSearching} 
               className="px-10 md:px-16 py-4 md:py-6 bg-black text-white rounded-full font-black text-xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
             >
-              {isSearching ? "查找中..." : "寻找碰头地点！"}
+              {isSearching ? "查找中..." : "寻找碰头地点！🚗"}
             </button>
           </div>
 
@@ -405,12 +405,12 @@ export default function Home() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1 space-y-2">
                         {/* 方案标签组 */}
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap items-center">
                           {i === 0 && (
                             <span className="text-xs bg-black text-white px-3 py-1 font-black italic uppercase">⚖️ 公平方案</span>
                           )}
                           {favorLabel && (
-                            <span className="text-xs bg-green-400 text-black px-3 py-1 font-black neo-border">{favorLabel}</span>
+                            <span className="text-xs bg-green-600 text-white px-3 py-1 font-black">{favorLabel}</span>
                           )}
                         </div>
                         <h4 className="text-2xl font-black text-black leading-tight">{item.shop_name}</h4>
@@ -445,14 +445,7 @@ export default function Home() {
                       {item.time_details?.map((detail, idx) => (
                         <div key={idx} className="flex justify-between items-center text-base">
                           <span className="font-black text-black italic">{getLabel(idx)}</span>
-                          <div className="flex items-center gap-2">
-                            {detail.tag && i !== 0 && (
-                              <span className="text-[10px] bg-black text-white px-2 py-0.5 font-black uppercase">
-                                FAST 🚀
-                              </span>
-                            )}
-                            <span className={`font-black text-lg ${detail.tag ? 'text-green-600' : 'text-black'}`}>{detail.duration}</span>
-                          </div>
+                          <span className={`font-black text-lg ${detail.tag ? 'text-green-600' : 'text-black'}`}>{detail.duration}</span>
                         </div>
                       ))}
                     </div>

@@ -101,26 +101,43 @@ export default function MapView({ locations }: MapViewProps) {
 
       const marker = new AMap.Marker({
         position: [lng, lat],
-        // 自定义标记内容：蓝色背景的数字序号
+        // 自定义标记内容：neo-brutalism 风格标记
         content: `
           <div style="
-            background-color: #2563eb; 
-            color: white; 
-            font-size: 14px; 
-            font-weight: bold;
-            width: 28px; 
-            height: 28px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           ">
-            ${index + 1}
+            <div style="
+              background-color: #FCE682;
+              color: black;
+              font-size: 16px;
+              font-weight: 900;
+              font-style: italic;
+              min-width: 36px;
+              height: 36px;
+              padding: 0 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 3px solid black;
+              box-shadow: 4px 4px 0 0 black;
+              white-space: nowrap;
+            ">
+              ${loc.shop_name ? loc.shop_name.slice(0, 6) : index + 1}
+            </div>
+            <div style="
+              width: 0;
+              height: 0;
+              border-left: 10px solid transparent;
+              border-right: 10px solid transparent;
+              border-top: 12px solid black;
+              margin-top: -1px;
+            "></div>
           </div>
         `,
-        offset: new AMap.Pixel(-14, -14), // 居中偏移
+        offset: new AMap.Pixel(-18, -48), // 调整偏移让箭头指向准确位置
         title: loc.shop_name || loc.address,
         extData: { index: index } // 绑定数据方便后续点击交互
       });
