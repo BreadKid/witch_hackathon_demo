@@ -41,6 +41,8 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 10. Refine mobile font sizes and spacing for better readability. **Done**
 11. Reduce mobile operational panel height to 60% and further scale down fonts. **Done**
 12. Adjust "寻找地点！" button to fit content with appropriate padding. **Done**
+13. Refine LoadingOverlay text and styles to match Neo-brutalism theme. **Done**
+14. Adjust LoadingOverlay footer text size to be smaller for visual hierarchy. **Done**
 
 ## Work Log (UI Redesign)
 - Steps 1-6: Implemented a complete UI overhaul using a "neo-brutalism" aesthetic.
@@ -50,4 +52,6 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 - Step 10: Optimized mobile UI by reducing font sizes for headers, inputs, and buttons while maintaining the bold "neo-brutalism" style.
 - Step 11: Adjusted mobile layout: set panel height to 60%, reduced padding (`p-5`), and further scaled down font sizes (title to `4xl`, inputs to `text-base`, buttons to `text-xl`) to ensure content fits without excessive scrolling.
 - Step 12: Redesigned the search button to no longer be full-width, using `px-10` padding to create a balanced, "breathing" size based on the text content.
+- Step 13: Updated `LoadingOverlay` with new scrolling texts and refined the UI to match the main app's bold aesthetic (yellow background, black borders, and slanted slogan box).
+- Step 14: Reduced the font size of the slogan in the loading overlay to `text-sm` to improve visual hierarchy against the main scrolling text.
 - Colors: Main background set to yellow (#FCE682), using black borders and hard shadows throughout for a sticker-like feel.

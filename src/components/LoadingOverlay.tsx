@@ -4,11 +4,8 @@ import { useState, useEffect } from "react";
 const LOADING_TEXTS = [
   "又要见到好朋友啦",
   "在哪里见面好呢",
-  "要不要善待一下经期的朋友",
-  "她穿了高跟鞋，善待一下她吧",
-  "正在计算最公平的距离...",
-  "正在寻找环境优雅的场所...",
-  "快好啦，再等我一下下...",
+  "要不要稍稍善待一下经期的朋友",
+  "这人今天穿高跟，稍稍善待一下吧",
 ];
 
 export default function LoadingOverlay() {
@@ -22,23 +19,26 @@ export default function LoadingOverlay() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-md transition-opacity duration-300 pointer-events-auto">
-      <div className="text-center p-8 bg-white/80 rounded-3xl shadow-2xl border border-white/30 w-[85%] max-w-sm mx-auto">
-        <div className="mb-8 relative w-16 h-16 mx-auto">
-          <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#FCE682]/40 backdrop-blur-md transition-opacity duration-300 pointer-events-auto">
+      <div className="text-center p-8 bg-white neo-border neo-shadow w-[85%] max-w-sm mx-auto">
+        <div className="mb-8 relative w-20 h-20 mx-auto">
+          <div className="absolute inset-0 border-4 border-black/10 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-black rounded-full border-t-transparent animate-spin"></div>
         </div>
-        <div className="h-8 overflow-hidden relative">
+        <div className="h-10 overflow-hidden relative flex items-center justify-center">
           <p 
             key={textIndex} 
-            className="text-lg font-bold text-gray-800 animate-text-slide"
+            className="text-xl font-black text-black italic animate-text-slide"
           >
             {LOADING_TEXTS[textIndex]}
           </p>
         </div>
-        <p className="mt-4 text-xs text-blue-500 font-medium tracking-widest uppercase">
-          Finding the best spot
-        </p>
+        <div className="mt-6 relative inline-block">
+          <div className="absolute inset-0 bg-black -rotate-1"></div>
+          <p className="relative text-sm font-black text-white italic px-4 py-1 -rotate-1">
+            别多想了 见面重要
+          </p>
+        </div>
       </div>
     </div>
   );
