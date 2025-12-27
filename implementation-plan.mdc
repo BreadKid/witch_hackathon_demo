@@ -14,6 +14,7 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 8. Replace native `alert` with a custom Toast notification system. **Done**
 9. Add "偏爱朋友X" or "善待多人" labels to scheme cards based on time details. **Done**
 10. Refine labels: remove "备选方案" and rename "偏爱好朋友X" to "善待好朋友X". **Done**
+11. Update application title to "碰头！" and add slogan "别多想了 见面重要". **Done**
 
 ## Work Log
 - Step 1: Created `src/components/LoadingOverlay.tsx` with a basic structure and loading animation.
@@ -25,3 +26,4 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 - Step 7: Implemented a custom Toast notification system in `src/app/page.tsx` and replaced all native `alert` calls for a better user experience.
 - Step 8: Enhanced scheme cards in `src/app/page.tsx` to display "偏爱朋友X" or "善待多人" green labels based on the favored friend tags.
 - Step 9: Simplified scheme labels by removing "备选方案" and updating favoring text to "善待好朋友X".
+- Step 11: Updated application title to "碰头！", added slogan "别多想了 见面重要", and changed the icon to 🤝.

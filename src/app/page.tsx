@@ -190,9 +190,12 @@ export default function Home() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-5 pb-20 scroll-smooth">
-          <h1 className="text-2xl font-extrabold text-blue-600 flex items-center gap-2">
-            <span>🍔</span> 聚会地点查找器
-          </h1>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-extrabold text-blue-600 flex items-center gap-2">
+              <span>🤝</span> 碰头！
+            </h1>
+            <p className="text-sm text-gray-500 font-medium ml-1">别多想了 见面重要</p>
+          </div>
 
           {/* 输入框组 */}
           <div className="flex flex-col gap-3">
