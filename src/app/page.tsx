@@ -69,6 +69,20 @@ export default function Home() {
     }
   };
 
+  // ✨ 新增：复制功能
+  const handleCopy = (text: string) => {
+    if (!text) return;
+    // 使用 Clipboard API 写入剪贴板
+    navigator.clipboard.writeText(text).then(() => {
+      // 按照你的要求提示
+      alert("已粘贴，快去分享给你的好朋友吧～");
+    }).catch((err) => {
+      console.error("复制失败:", err);
+      // 降级处理：有些浏览器可能需要HTTPS才能使用clipboard
+      alert("复制失败，请长按店名手动复制");
+    });
+  };
+
   const handleSearch = async () => {
     const validLocations = inputs.filter((i) => i.trim() !== "");
     if (validLocations.length < 2) {
@@ -88,9 +102,6 @@ export default function Home() {
     setIsSearching(true);
     setResults([]);
 
-    // ✨ 状态转换逻辑
-    // 没勾选 (showAllResults=false) -> 状态为 1 (公平模式)
-    // 勾选了 (showAllResults=true)  -> 状态为 0 (全部模式)
     const statusValue = showAllResults ? 0 : 1;
 
     try {
@@ -116,7 +127,6 @@ export default function Home() {
     }
   };
 
-  // 渲染逻辑
   const displayResults = showAllResults ? results : results.slice(0, 1);
 
   return (
@@ -237,7 +247,7 @@ export default function Home() {
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
               />
               <label htmlFor="showAllResults" className="text-sm text-gray-500 select-none cursor-pointer">
-                查找时进入对比模式
+                显示更多备选方案（不仅仅是折中地点）
               </label>
             </div>
           </div>
@@ -258,7 +268,7 @@ export default function Home() {
                 return (
                   <div key={i} className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow ${isFairRecommendation ? 'border-blue-200 ring-4 ring-blue-50/50' : 'border-gray-100'}`}>
                     <div className="flex justify-between items-start mb-4">
-                      <div>
+                      <div className="flex-1">
                         <span className={`text-xs font-bold px-2 py-0.5 rounded mb-1 inline-block ${
                           isFairRecommendation 
                             ? "bg-blue-600 text-white" 
@@ -270,6 +280,21 @@ export default function Home() {
                         <h4 className="text-xl font-bold text-gray-900 mt-1">{item.shop_name}</h4>
                         <p className="text-xs text-gray-500 mt-1 truncate max-w-[200px]">{item.address}</p>
                       </div>
+
+                      {/* ✨ 新增：右上角的粘贴(复制)按钮 */}
+                      <button
+                        onClick={() => handleCopy(item.shop_name)}
+                        className="ml-2 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-95 flex flex-col items-center gap-1 group"
+                        title="复制店名分享"
+                      >
+                         {/* 复制图标 SVG */}
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                         </svg>
+                         <span className="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                           分享
+                         </span>
+                      </button>
                     </div>
                     
                     <div className="space-y-2">
