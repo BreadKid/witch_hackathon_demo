@@ -260,7 +260,7 @@ export default function Home() {
           <div className="w-16 h-2 bg-black/10 rounded-full" />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 md:p-12 space-y-6 md:space-y-10 pb-20 scroll-smooth z-10 no-scrollbar">
+        <div className="flex-1 overflow-y-auto p-5 md:p-12 space-y-6 md:space-y-10 pb-4 md:pb-32 scroll-smooth z-10 no-scrollbar">
           {/* 标题区域 */}
           <div className="space-y-3 md:space-y-6">
             <h1 className="text-4xl md:text-7xl font-black text-black italic tracking-tighter leading-none">
@@ -359,17 +359,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* 搜索按钮 */}
-          <div className="pt-2 md:pt-6 flex justify-center">
-            <button 
-              onClick={handleSearch} 
-              disabled={isSearching} 
-              className="px-10 md:px-16 py-4 md:py-6 bg-black text-white rounded-full font-black text-xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
-            >
-              {isSearching ? "查找中..." : "寻找地点！"}
-            </button>
-          </div>
-
           {/* 对比模式复选框 */}
           <label className={`flex items-center gap-3 md:gap-4 select-none ${isSearching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
             <div className="relative">
@@ -385,6 +374,17 @@ export default function Home() {
             </div>
             <span className="text-base md:text-xl font-black text-black italic">查找时进入对比模式</span>
           </label>
+
+          {/* 搜索按钮 */}
+          <div className="pt-2 md:pt-6 flex justify-center">
+            <button 
+              onClick={handleSearch} 
+              disabled={isSearching} 
+              className="px-10 md:px-16 py-4 md:py-6 bg-black text-white rounded-full font-black text-xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
+            >
+              {isSearching ? "查找中..." : "寻找碰头地点！"}
+            </button>
+          </div>
 
           {/* 结果展示 */}
           {displayResults.length > 0 && (
