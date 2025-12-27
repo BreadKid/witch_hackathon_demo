@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useRef } from "react";
 
+// 高德地图安全密钥配置（必须在加载 AMap 之前设置）
+const AMAP_KEY = "f0f8997e05bfa2dd95e546383cc44b90";
+const AMAP_SECURITY_CODE = "71edc06ee1ffec6400bb7d170353a584";
+
 interface MapViewProps {
   locations?: {
     latitude?: number;
@@ -20,13 +24,20 @@ export default function MapView({ locations }: MapViewProps) {
   // 1. 初始化地图
   useEffect(() => {
     const initMap = async () => {
+      // ✨ 必须在加载高德地图之前配置安全密钥
+      if (typeof window !== "undefined") {
+        (window as any)._AMapSecurityConfig = {
+          securityJsCode: AMAP_SECURITY_CODE,
+        };
+      }
+
       // 动态加载高德地图
       const loaderModule = await import("@amap/amap-jsapi-loader");
       const AMapLoader = loaderModule.default || loaderModule;
 
       try {
         const AMap = await AMapLoader.load({
-          key: "f0f8997e05bfa2dd95e546383cc44b90", // 你的 Key
+          key: AMAP_KEY,
           version: "2.0",
           plugins: ["AMap.Scale", "AMap.ToolBar", "AMap.Marker"],
         });

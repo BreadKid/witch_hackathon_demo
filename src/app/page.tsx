@@ -29,11 +29,8 @@ export default function Home() {
   const [results, setResults] = useState<SearchResponse[]>([]);
   const [isLocating, setIsLocating] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  
   const [selectedType, setSelectedType] = useState("咖啡厅");
   const [customType, setCustomType] = useState("");
-
-  // ✨ 新增状态：是否显示所有方案（默认为 false，只显示公平方案）
   const [showAllResults, setShowAllResults] = useState(false);
 
   const getLabel = (index: number) => {
@@ -91,10 +88,16 @@ export default function Home() {
     setIsSearching(true);
     setResults([]);
 
+    // ✨ 状态转换逻辑
+    // 没勾选 (showAllResults=false) -> 状态为 1 (公平模式)
+    // 勾选了 (showAllResults=true)  -> 状态为 0 (全部模式)
+    const statusValue = showAllResults ? 0 : 1;
+
     try {
       const data = await fetchMeetingPoint({
         user_locations: validLocations,
         preference_type: finalPreference,
+        num: statusValue, 
       });
 
       if (data && data.length > 0) {
@@ -113,8 +116,7 @@ export default function Home() {
     }
   };
 
-  // ✨ 核心逻辑：根据复选框状态决定要显示的列表
-  // 如果 showAllResults 为 true，显示所有；否则只切片取第1个
+  // 渲染逻辑
   const displayResults = showAllResults ? results : results.slice(0, 1);
 
   return (
@@ -226,7 +228,6 @@ export default function Home() {
               {isSearching ? "正在计算最佳地点..." : "🚀 开始查找"}
             </button>
 
-            {/* ✨ 新增：复选框区域 */}
             <div className="mt-3 flex items-center justify-center gap-2">
               <input 
                 type="checkbox" 
@@ -236,7 +237,7 @@ export default function Home() {
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
               />
               <label htmlFor="showAllResults" className="text-sm text-gray-500 select-none cursor-pointer">
-                显示更多备选方案（不仅仅是折中地点）
+                查找时进入对比模式
               </label>
             </div>
           </div>
@@ -252,14 +253,12 @@ export default function Home() {
               </div>
               
               {displayResults.map((item, i) => {
-                // ✨ 核心判断：第一个结果 (index 0) 永远是【公平推荐】
                 const isFairRecommendation = i === 0;
                 
                 return (
                   <div key={i} className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow ${isFairRecommendation ? 'border-blue-200 ring-4 ring-blue-50/50' : 'border-gray-100'}`}>
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        {/* ✨ 标签逻辑：第一个是公平，其他的算备选 */}
                         <span className={`text-xs font-bold px-2 py-0.5 rounded mb-1 inline-block ${
                           isFairRecommendation 
                             ? "bg-blue-600 text-white" 
@@ -286,7 +285,6 @@ export default function Home() {
                             <span className="text-gray-500">{idx === 0 ? "我" : `${idx}号`}</span>
                             
                             <div className="flex items-center gap-2">
-                              {/* ✨ 核心UI更新：如果 tag 为 true，显示图片同款样式 */}
                               {isFastest && (
                                 <div className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded flex items-center gap-1 font-bold">
                                   最快 🚀

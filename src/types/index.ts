@@ -3,14 +3,14 @@
 export interface SearchRequest {
   user_locations: string[];
   preference_type: string;
-  num?: number;
+  // 1 = 没勾选(只给1个公平的), 0 = 勾选了(给全部)
+  num: number; 
 }
 
-// ✨ 新增：对应后端文档里的 TimeDetail 对象
 export interface TimeDetail {
-  location: string; // 起始点
-  duration: string; // 耗时
-  tag: boolean;     // ✨ 是否为最短时间
+  location: string; 
+  duration: string; 
+  tag: boolean;     
 }
 
 export interface SearchResponse {
@@ -18,6 +18,5 @@ export interface SearchResponse {
   latitude: number;
   longitude: number;
   address: string;
-  // ✨ 修改：现在这是一个详情数组，不再是简单的 key-value 对象
   time_details: TimeDetail[]; 
 }
