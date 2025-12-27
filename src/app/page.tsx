@@ -183,7 +183,7 @@ export default function Home() {
                 <div className="flex gap-2 items-center">
                   <div className="relative flex-1">
                     <input
-                      className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
+                      className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
                       placeholder={index === 0 ? "点击右侧图标进行定位" : "输入好朋友地址"}
                       value={addr}
                       onChange={(e) => handleInputChange(index, e.target.value)}

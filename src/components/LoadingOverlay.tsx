@@ -22,8 +22,8 @@ export default function LoadingOverlay() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-md transition-opacity duration-300">
-      <div className="text-center p-8 bg-white/70 rounded-3xl shadow-2xl border border-white/30 max-w-[85%] transform transition-all scale-100">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-md transition-opacity duration-300 pointer-events-auto">
+      <div className="text-center p-8 bg-white/80 rounded-3xl shadow-2xl border border-white/30 w-[85%] max-w-sm mx-auto">
         <div className="mb-8 relative w-16 h-16 mx-auto">
           <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
