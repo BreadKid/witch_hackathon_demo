@@ -359,8 +359,19 @@ export default function Home() {
             )}
           </div>
 
+          {/* 搜索按钮 */}
+          <div className="pt-2 md:pt-6 flex justify-center">
+            <button 
+              onClick={handleSearch} 
+              disabled={isSearching} 
+              className="px-10 md:px-16 py-4 md:py-6 bg-black text-white rounded-full font-black text-xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
+            >
+              {isSearching ? "查找中..." : "寻找碰头地点！"}
+            </button>
+          </div>
+
           {/* 对比模式复选框 */}
-          <label className={`flex items-center gap-3 md:gap-4 select-none ${isSearching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+          <label className={`flex items-center justify-center gap-3 md:gap-4 select-none ${isSearching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
             <div className="relative">
               <input
                 type="checkbox"
@@ -374,17 +385,6 @@ export default function Home() {
             </div>
             <span className="text-base md:text-xl font-black text-black italic">查找时进入对比模式</span>
           </label>
-
-          {/* 搜索按钮 */}
-          <div className="pt-2 md:pt-6 flex justify-center">
-            <button 
-              onClick={handleSearch} 
-              disabled={isSearching} 
-              className="px-10 md:px-16 py-4 md:py-6 bg-black text-white rounded-full font-black text-xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
-            >
-              {isSearching ? "查找中..." : "寻找碰头地点！"}
-            </button>
-          </div>
 
           {/* 结果展示 */}
           {displayResults.length > 0 && (
