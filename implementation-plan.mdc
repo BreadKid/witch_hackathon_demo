@@ -12,6 +12,8 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 6. Fix mobile layout offset by ensuring proper centering and viewport handling. **Done**
 7. Rename "自定义" to "其他" and add custom input field for preferences. **Done**
 8. Replace native `alert` with a custom Toast notification system. **Done**
+9. Add "偏爱朋友X" or "善待多人" labels to scheme cards based on time details. **Done**
+10. Refine labels: remove "备选方案" and rename "偏爱好朋友X" to "善待好朋友X". **Done**
 
 ## Work Log
 - Step 1: Created `src/components/LoadingOverlay.tsx` with a basic structure and loading animation.
@@ -21,3 +23,5 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 - Step 5: Fixed mobile zoom and layout issues by adding viewport settings and increasing font size.
 - Step 6: Updated preference options: renamed "自定义" to "其他" and added a conditional input field for custom categories.
 - Step 7: Implemented a custom Toast notification system in `src/app/page.tsx` and replaced all native `alert` calls for a better user experience.
+- Step 8: Enhanced scheme cards in `src/app/page.tsx` to display "偏爱朋友X" or "善待多人" green labels based on the favored friend tags.
+- Step 9: Simplified scheme labels by removing "备选方案" and updating favoring text to "善待好朋友X".

@@ -272,68 +272,83 @@ export default function Home() {
           {/* 结果展示 */}
           {displayResults.length > 0 && (
             <div id="result-section" className="flex flex-col gap-4 pt-4">
-              {displayResults.map((item, i) => (
-                <div key={i} className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm ring-4 ring-blue-50/30">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1 overflow-hidden">
-                      {/* 方案标签：第一个显示"公平"，其他根据tag判断 */}
-                      {i === 0 ? (
-                        <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-bold">⚖️ 公平方案</span>
-                      ) : (
-                        <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded uppercase font-bold">🎯 备选方案</span>
-                      )}
-                      <h4 className="text-xl font-bold text-gray-900 mt-1 truncate">{item.shop_name}</h4>
-                      <p className="text-xs text-gray-400 mt-1 truncate">{item.address}</p>
-                    </div>
+              {displayResults.map((item, i) => {
+                const favoredFriends = item.time_details
+                  ?.map((detail, idx) => (detail.tag ? getLabel(idx) : null))
+                  .filter(Boolean) as string[];
 
-                    <div className="flex gap-1 ml-2">
-                      {/* 新增：分享按钮 (高德地图) */}
-                      <button
-                        onClick={() => handleShare(item.address)}
-                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg flex flex-col items-center group transition-all"
-                        title="高德导航"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">导航</span>
-                      </button>
+                const favorLabel = favoredFriends.length === 1 
+                  ? `✨ 善待${favoredFriends[0]}` 
+                  : favoredFriends.length > 1 
+                    ? "🌈 善待多人" 
+                    : null;
 
-                      {/* 复制按钮 */}
-                      <button
-                        onClick={() => handleCopy(item.shop_name, item.address)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg flex flex-col items-center group transition-all"
-                        title="复制地址"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                        </svg>
-                        <span className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">复制</span>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {item.time_details?.map((detail, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0">
-                        <span className="text-gray-500">{getLabel(idx)}</span>
-                        {/* 当tag为true且不是第一个方案时，显示"最快"火箭标记 */}
-                        {detail.tag && i !== 0 ? (
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">
-                              最快 🚀
-                            </span>
-                            <span className="font-bold text-green-600">{detail.duration}</span>
-                          </div>
-                        ) : (
-                          <span className={`font-bold ${detail.tag ? 'text-green-600' : 'text-gray-700'}`}>{detail.duration}</span>
-                        )}
+                return (
+                  <div key={i} className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm ring-4 ring-blue-50/30">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1 overflow-hidden">
+                        {/* 方案标签组 */}
+                        <div className="flex gap-2 mb-1 items-center flex-wrap">
+                          {i === 0 && (
+                            <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-bold shrink-0">⚖️ 公平方案</span>
+                          )}
+                          {favorLabel && (
+                            <span className="text-[10px] bg-green-600 text-white px-2 py-0.5 rounded uppercase font-bold shrink-0">{favorLabel}</span>
+                          )}
+                        </div>
+                        <h4 className="text-xl font-bold text-gray-900 mt-1 truncate">{item.shop_name}</h4>
+                        <p className="text-xs text-gray-400 mt-1 truncate">{item.address}</p>
                       </div>
-                    ))}
+
+                      <div className="flex gap-1 ml-2">
+                        {/* 分享按钮 (高德地图) */}
+                        <button
+                          onClick={() => handleShare(item.address)}
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg flex flex-col items-center group transition-all"
+                          title="高德导航"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">导航</span>
+                        </button>
+
+                        {/* 复制按钮 */}
+                        <button
+                          onClick={() => handleCopy(item.shop_name, item.address)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg flex flex-col items-center group transition-all"
+                          title="复制地址"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                          </svg>
+                          <span className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">复制</span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {item.time_details?.map((detail, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0">
+                          <span className="text-gray-500">{getLabel(idx)}</span>
+                          {/* 当tag为true且不是第一个方案时，显示"最快"火箭标记 */}
+                          {detail.tag && i !== 0 ? (
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                                最快 🚀
+                              </span>
+                              <span className="font-bold text-green-600">{detail.duration}</span>
+                            </div>
+                          ) : (
+                            <span className={`font-bold ${detail.tag ? 'text-green-600' : 'text-gray-700'}`}>{detail.duration}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
