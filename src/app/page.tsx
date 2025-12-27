@@ -69,18 +69,41 @@ export default function Home() {
     }
   };
 
-  // ✨ 新增：复制功能
   const handleCopy = (text: string) => {
     if (!text) return;
-    // 使用 Clipboard API 写入剪贴板
     navigator.clipboard.writeText(text).then(() => {
-      // 按照你的要求提示
-      alert("已粘贴，快去分享给你的好朋友吧～");
-    }).catch((err) => {
-      console.error("复制失败:", err);
-      // 降级处理：有些浏览器可能需要HTTPS才能使用clipboard
-      alert("复制失败，请长按店名手动复制");
+      alert("店名已复制，快去发给好友吧～");
+    }).catch(() => {
+      alert("复制失败，请尝试手动长按复制");
     });
+  };
+
+  /**
+   * 分享/导航功能逻辑：
+   * 尝试唤起高德 App，若失败则跳转网页版
+   */
+  const handleShare = (shopName: string, address: string) => {
+    const encodeName = encodeURIComponent(shopName);
+    const encodeAddr = encodeURIComponent(address);
+    
+    // 高德 App 协议 URL (尝试唤起 App 并搜索/导航)
+    const appUrl = `amapuri://route/plan/?dname=${encodeName}&dev=0&m=0&t=0`;
+    // 高德 网页版 URL (回退方案)
+    const webUrl = `https://uri.amap.com/marker?p=,,${encodeName}&addr=${encodeAddr}&callnative=1`;
+
+    const startTime = Date.now();
+    
+    // 尝试打开 App
+    window.location.href = appUrl;
+
+    // 定时器判断：如果在 2.5 秒内页面没有由于打开 App 而进入后台/隐藏，则认为打开失败，跳转网页版
+    setTimeout(() => {
+      const endTime = Date.now();
+      // 如果时间间隔过长，说明浏览器可能弹出了“是否打开 App”的确认框，用户可能正在点击，所以稍作宽限
+      if (endTime - startTime < 3000) {
+        window.open(webUrl, '_blank');
+      }
+    }, 2500);
   };
 
   const handleSearch = async () => {
@@ -102,13 +125,11 @@ export default function Home() {
     setIsSearching(true);
     setResults([]);
 
-    const statusValue = showAllResults ? 0 : 1;
-
     try {
       const data = await fetchMeetingPoint({
         user_locations: validLocations,
         preference_type: finalPreference,
-        num: statusValue, 
+        num: showAllResults ? 0 : 1, 
       });
 
       if (data && data.length > 0) {
@@ -120,7 +141,6 @@ export default function Home() {
         alert("未找到合适地点");
       }
     } catch (error) {
-      console.error("查找失败:", error);
       alert("查找失败，请稍后重试");
     } finally {
       setIsSearching(false);
@@ -132,200 +152,118 @@ export default function Home() {
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-gray-100 flex flex-col md:flex-row">
       
-      {/* --- 地图区域 --- */}
+      {/* 地图区域 */}
       <div className="absolute top-0 left-0 w-full h-[45%] z-0 md:relative md:h-full md:flex-1 md:order-2">
         <MapView locations={displayResults} />
-        <div className="md:hidden absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white/80 to-transparent pointer-events-none z-10" />
       </div>
 
-      {/* --- 操作面板 --- */}
-      <div className="
-        absolute bottom-0 left-0 w-full h-[60%] z-10 
-        bg-white rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.1)]
-        flex flex-col
-        md:relative md:h-full md:w-[400px] md:max-w-md md:rounded-none md:shadow-2xl md:z-20 md:order-1
-      ">
+      {/* 操作面板 */}
+      <div className="absolute bottom-0 left-0 w-full h-[60%] z-10 bg-white rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col md:relative md:h-full md:w-[400px] md:max-w-md md:rounded-none md:order-1">
         <div className="w-full flex justify-center pt-3 pb-1 md:hidden">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-5 pb-20 md:pb-8 scroll-smooth">
-          
-          <h1 className="text-2xl md:text-3xl font-extrabold text-blue-600 flex items-center gap-2">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-5 pb-20 scroll-smooth">
+          <h1 className="text-2xl font-extrabold text-blue-600 flex items-center gap-2">
             <span>🍔</span> 聚会地点查找器
           </h1>
 
+          {/* 输入框组 */}
           <div className="flex flex-col gap-3">
-            {inputs.map((addr, index) => {
-              const label = getLabel(index);
-              const isOrganizer = index === 0;
-
-              return (
-                <div key={index} className="flex gap-2 group items-center">
-                  <div className="relative flex-1">
-                    <input
-                      className="w-full border border-gray-200 bg-gray-50 p-3 pl-4 rounded-xl text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none"
-                      placeholder={`${label}位置`}
-                      value={addr}
-                      onChange={(e) => handleInputChange(index, e.target.value)}
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium pointer-events-none">
-                      {isOrganizer ? "我" : `#${index}`}
-                    </div>
-                  </div>
-
-                  {isOrganizer ? (
-                    <button
-                      onClick={handleLocate}
-                      disabled={isLocating}
-                      className="bg-blue-50 text-blue-600 p-3 rounded-xl aspect-square flex items-center justify-center active:scale-95 transition-transform"
-                    >
-                      {isLocating ? <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"/> : "🧭"}
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleRemoveUser(index)} 
-                      className="bg-red-50 text-red-500 p-3 rounded-xl aspect-square flex items-center justify-center active:scale-95 transition-transform"
-                    >
-                      ✕
-                    </button>
-                  )}
+            {inputs.map((addr, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <div className="relative flex-1">
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={`${getLabel(index)}位置`}
+                    value={addr}
+                    onChange={(e) => handleInputChange(index, e.target.value)}
+                  />
                 </div>
-              );
-            })}
-            
-            <button 
-              onClick={handleAddUser} 
-              className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1 py-2 hover:text-blue-500 transition-colors"
-            >
-              <span>+</span> 添加一位好友
-            </button>
+                {index === 0 ? (
+                  <button onClick={handleLocate} className="bg-blue-50 text-blue-600 p-3 rounded-xl aspect-square flex items-center justify-center">
+                    {isLocating ? <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"/> : "🧭"}
+                  </button>
+                ) : (
+                  <button onClick={() => handleRemoveUser(index)} className="bg-red-50 text-red-500 p-3 rounded-xl aspect-square flex items-center justify-center">✕</button>
+                )}
+              </div>
+            ))}
+            <button onClick={handleAddUser} className="text-sm text-gray-500 py-2 hover:text-blue-500">+ 添加一位好友</button>
           </div>
 
+          {/* 偏好选择 */}
           <div>
-            <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">聚会类型</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
               {PREFERENCE_OPTIONS.map((option) => (
                 <button
                   key={option}
                   onClick={() => setSelectedType(option)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
-                    selectedType === option 
-                      ? "bg-blue-600 text-white border-blue-600 shadow-md transform scale-105" 
-                      : "bg-white text-gray-600 border-gray-200"
+                  className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
+                    selectedType === option ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200"
                   }`}
                 >
                   {option}
                 </button>
               ))}
             </div>
-            {selectedType === "自定义" && (
-              <input 
-                className="mt-3 w-full border border-blue-200 bg-blue-50/50 p-3 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                placeholder="例如：火锅、KTV" 
-                value={customType} 
-                onChange={(e) => setCustomType(e.target.value)} 
-              />
-            )}
           </div>
 
-          <div>
-            <button 
-              onClick={handleSearch} 
-              disabled={isSearching} 
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all flex justify-center items-center"
-            >
-              {isSearching ? "正在计算最佳地点..." : "🚀 开始查找"}
-            </button>
+          {/* 搜索按钮 */}
+          <button onClick={handleSearch} disabled={isSearching} className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg active:scale-95 transition-all">
+            {isSearching ? "查找中..." : "🚀 开始查找"}
+          </button>
 
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <input 
-                type="checkbox" 
-                id="showAllResults" 
-                checked={showAllResults}
-                onChange={(e) => setShowAllResults(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-              />
-              <label htmlFor="showAllResults" className="text-sm text-gray-500 select-none cursor-pointer">
-                显示更多备选方案（不仅仅是折中地点）
-              </label>
-            </div>
-          </div>
-
-          {/* --- 结果显示区域 --- */}
+          {/* 结果展示 */}
           {displayResults.length > 0 && (
-            <div id="result-section" className="flex flex-col gap-6 pt-4">
-              <div className="flex items-center gap-2">
-                <span className="w-1 h-6 bg-green-500 rounded-full"/>
-                <h3 className="font-bold text-gray-800 text-lg">
-                   {showAllResults ? "所有方案" : "最佳折中方案"}
-                </h3>
-              </div>
-              
-              {displayResults.map((item, i) => {
-                const isFairRecommendation = i === 0;
-                
-                return (
-                  <div key={i} className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow ${isFairRecommendation ? 'border-blue-200 ring-4 ring-blue-50/50' : 'border-gray-100'}`}>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded mb-1 inline-block ${
-                          isFairRecommendation 
-                            ? "bg-blue-600 text-white" 
-                            : "bg-gray-100 text-gray-500"
-                        }`}>
-                          {isFairRecommendation ? "⚖️ 公平推荐" : `备选方案 ${i+1}`}
-                        </span>
-                        
-                        <h4 className="text-xl font-bold text-gray-900 mt-1">{item.shop_name}</h4>
-                        <p className="text-xs text-gray-500 mt-1 truncate max-w-[200px]">{item.address}</p>
-                      </div>
+            <div id="result-section" className="flex flex-col gap-4 pt-4">
+              {displayResults.map((item, i) => (
+                <div key={i} className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm ring-4 ring-blue-50/30">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1 overflow-hidden">
+                      <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-bold">Recommended</span>
+                      <h4 className="text-xl font-bold text-gray-900 mt-1 truncate">{item.shop_name}</h4>
+                      <p className="text-xs text-gray-400 mt-1 truncate">{item.address}</p>
+                    </div>
 
-                      {/* ✨ 新增：右上角的粘贴(复制)按钮 */}
+                    <div className="flex gap-1 ml-2">
+                      {/* 新增：分享按钮 (高德地图) */}
+                      <button
+                        onClick={() => handleShare(item.shop_name, item.address)}
+                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg flex flex-col items-center group transition-all"
+                        title="高德导航"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">导航</span>
+                      </button>
+
+                      {/* 复制按钮 */}
                       <button
                         onClick={() => handleCopy(item.shop_name)}
-                        className="ml-2 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-95 flex flex-col items-center gap-1 group"
-                        title="复制店名分享"
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg flex flex-col items-center group transition-all"
+                        title="复制店名"
                       >
-                         {/* 复制图标 SVG */}
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                         </svg>
-                         <span className="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                           分享
-                         </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                        </svg>
+                        <span className="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">复制</span>
                       </button>
                     </div>
-                    
-                    <div className="space-y-2">
-                      {inputs.map((addr, idx) => {
-                        if (!addr.trim()) return null;
-                        
-                        const detail = item.time_details?.find(t => t.location === addr);
-                        const duration = detail ? detail.duration : "计算中...";
-                        const isFastest = detail?.tag === true;
-
-                        return (
-                          <div key={idx} className="flex justify-between items-center text-sm border-b border-dashed border-gray-100 last:border-0 pb-2 last:pb-0">
-                            <span className="text-gray-500">{idx === 0 ? "我" : `${idx}号`}</span>
-                            
-                            <div className="flex items-center gap-2">
-                              {isFastest && (
-                                <div className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded flex items-center gap-1 font-bold">
-                                  最快 🚀
-                                </div>
-                              )}
-                              <span className={`font-bold text-lg ${isFastest ? 'text-green-600' : 'text-gray-700'}`}>
-                                {duration}
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
                   </div>
-                );
-              })}
+                  
+                  <div className="space-y-2">
+                    {item.time_details?.map((detail, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0">
+                        <span className="text-gray-500">{idx === 0 ? "我" : `${idx}号`}</span>
+                        <span className={`font-bold ${detail.tag ? 'text-green-600' : 'text-gray-700'}`}>{detail.duration}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
