@@ -3,7 +3,7 @@ import { SearchRequest, SearchResponse, TimeDetail } from "../types";
 
 export const fetchMeetingPoint = async (payload: SearchRequest): Promise<SearchResponse[]> => {
   try {
-    const backendUrl = process.env.BACKEND_URL || ""; 
+    // 通过 Next.js API Route 代理请求，避免 CORS 问题
     const PROXY_URL = "/api/proxy/stores"; 
 
     const res = await fetch(PROXY_URL, {
@@ -27,7 +27,7 @@ export const fetchMeetingPoint = async (payload: SearchRequest): Promise<SearchR
         shop_name: item.store,   
         latitude: Number(item.lat),      
         longitude: Number(item.long),    
-        address: item.store,
+        address: item.address,
         time_details: item.time as TimeDetail[] 
       }));
     }

@@ -71,10 +71,11 @@ export default function Home() {
     }
   };
 
-  const handleCopy = (text: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-      alert("店名已复制，快去发给好友吧～");
+  const handleCopy = (shopName: string, address: string) => {
+    const clipboardText = [shopName.trim(), address.trim()].filter(Boolean).join(" ");
+    if (!clipboardText) return;
+    navigator.clipboard.writeText(clipboardText).then(() => {
+      alert("地址已复制，快去发给好友吧～");
     }).catch(() => {
       alert("复制失败，请尝试手动长按复制");
     });
@@ -83,15 +84,15 @@ export default function Home() {
   /**
    * 分享/导航功能逻辑：
    * 尝试唤起高德 App，若失败则跳转网页版
+   * 使用 address 作为跳转依据
    */
-  const handleShare = (shopName: string, address: string) => {
-    const encodeName = encodeURIComponent(shopName);
+  const handleShare = (address: string) => {
     const encodeAddr = encodeURIComponent(address);
     
     // 高德 App 协议 URL (尝试唤起 App 并搜索/导航)
-    const appUrl = `amapuri://route/plan/?dname=${encodeName}&dev=0&m=0&t=0`;
+    const appUrl = `amapuri://route/plan/?dname=${encodeAddr}&dev=0&m=0&t=0`;
     // 高德 网页版 URL (回退方案)
-    const webUrl = `https://uri.amap.com/marker?p=,,${encodeName}&addr=${encodeAddr}&callnative=1`;
+    const webUrl = `https://uri.amap.com/marker?p=,,${encodeAddr}&addr=${encodeAddr}&callnative=1`;
 
     const startTime = Date.now();
     
@@ -101,7 +102,7 @@ export default function Home() {
     // 定时器判断：如果在 2.5 秒内页面没有由于打开 App 而进入后台/隐藏，则认为打开失败，跳转网页版
     setTimeout(() => {
       const endTime = Date.now();
-      // 如果时间间隔过长，说明浏览器可能弹出了“是否打开 App”的确认框，用户可能正在点击，所以稍作宽限
+      // 如果时间间隔过长，说明浏览器可能弹出了"是否打开 App"的确认框，用户可能正在点击，所以稍作宽限
       if (endTime - startTime < 3000) {
         window.open(webUrl, '_blank');
       }
@@ -255,7 +256,7 @@ export default function Home() {
                     <div className="flex gap-1 ml-2">
                       {/* 新增：分享按钮 (高德地图) */}
                       <button
-                        onClick={() => handleShare(item.shop_name, item.address)}
+                        onClick={() => handleShare(item.address)}
                         className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg flex flex-col items-center group transition-all"
                         title="高德导航"
                       >
@@ -268,9 +269,9 @@ export default function Home() {
 
                       {/* 复制按钮 */}
                       <button
-                        onClick={() => handleCopy(item.shop_name)}
+                        onClick={() => handleCopy(item.shop_name, item.address)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg flex flex-col items-center group transition-all"
-                        title="复制店名"
+                        title="复制地址"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
