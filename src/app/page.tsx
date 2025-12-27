@@ -23,8 +23,7 @@ const MAX_USERS = 5;
 const PREFERENCE_OPTIONS = [
   { label: "咖啡馆", icon: "☕" },
   { label: "公园", icon: "🌳" },
-  { label: "美食", icon: "🍴" },
-  { label: "酒吧", icon: "🍹" },
+  { label: "图书馆", icon: "📚" },
   { label: "其他", icon: "➕" },
 ];
 
@@ -45,8 +44,8 @@ export default function Home() {
   };
 
   const getLabel = (index: number) => {
-    if (index === 0) return "主理人位置"; 
-    return `${index}号好友位置`;
+    if (index === 0) return "我/好朋友#1"; 
+    return `好朋友#${index + 1}`;
   };
 
   const handleInputChange = (index: number, value: string) => {
@@ -190,50 +189,46 @@ export default function Home() {
       </div>
 
       {/* 操作面板 */}
-      <div className="absolute bottom-0 left-0 w-full h-[70%] z-10 bg-[#FCE682] rounded-t-[3rem] md:relative md:h-full md:w-[450px] md:max-w-md md:rounded-none md:order-1 flex flex-col">
+      <div className="absolute bottom-0 left-0 w-full h-[70%] z-10 bg-[#FCE682] rounded-t-[3rem] md:relative md:h-full md:w-[500px] md:max-w-xl md:rounded-none md:order-1 flex flex-col shadow-[10px_0_30px_rgba(0,0,0,0.1)]">
         {/* 背景装饰 */}
         <div className="absolute top-10 right-10 opacity-20 pointer-events-none">
-          <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor" className="text-pink-400 rotate-12">
+          <svg width="150" height="150" viewBox="0 0 24 24" fill="currentColor" className="text-pink-400 rotate-12">
             <path d="M12 2l2.4 7.2h7.6l-6.1 4.4 2.3 7.4-6.2-4.5-6.2 4.5 2.3-7.4-6.1-4.4h7.6z" />
           </svg>
         </div>
         <div className="absolute bottom-40 -left-10 opacity-20 pointer-events-none">
-          <div className="w-40 h-40 bg-green-300 rounded-full blur-3xl"></div>
+          <div className="w-60 h-60 bg-green-300 rounded-full blur-3xl"></div>
         </div>
 
         <div className="w-full flex justify-center pt-4 pb-2 md:hidden">
           <div className="w-16 h-2 bg-black/10 rounded-full" />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 pb-32 scroll-smooth z-10 no-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 md:space-y-10 pb-32 scroll-smooth z-10 no-scrollbar">
           {/* 标题区域 */}
-          <div className="space-y-4">
-            <h1 className="text-6xl font-black text-black italic tracking-tighter leading-none">
+          <div className="space-y-4 md:space-y-6">
+            <h1 className="text-5xl md:text-7xl font-black text-black italic tracking-tighter leading-none">
               碰头！
             </h1>
             <div className="relative inline-block">
               <div className="absolute inset-0 bg-black -rotate-2 neo-border"></div>
-              <p className="relative text-3xl font-black text-white italic px-4 py-2 -rotate-2">
+              <p className="relative text-2xl md:text-4xl font-black text-white italic px-4 py-2 md:px-6 md:py-3 -rotate-2">
                 别多想了 见面重要
               </p>
             </div>
           </div>
 
           {/* 输入框组 */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-6 md:gap-8">
             {inputs.map((addr, index) => (
-              <div key={index} className="relative group">
-                <div className="flex items-center gap-3 bg-white p-3 neo-pill neo-border neo-shadow transition-transform group-focus-within:-translate-y-1">
-                  {/* 用户头像 */}
-                  <div className={`w-12 h-12 rounded-full neo-border flex items-center justify-center text-2xl shrink-0 ${
-                    index === 0 ? "bg-[#71A5FF]" : "bg-[#FF9ECF]"
-                  }`}>
-                    <span className="grayscale-0">{index === 0 ? "👤" : "😊"}</span>
-                  </div>
-
+              <div key={index} className="relative group flex flex-col gap-1.5 md:gap-2">
+                <span className="text-sm md:text-base font-black text-black italic ml-6 uppercase tracking-wider">
+                  {getLabel(index)}
+                </span>
+                <div className="flex items-center gap-3 md:gap-4 bg-white p-3 md:p-4 neo-pill neo-border neo-shadow transition-transform group-focus-within:-translate-y-1">
                   <input
-                    className="flex-1 bg-transparent py-2 px-1 text-lg font-bold placeholder:text-gray-400 outline-none"
-                    placeholder={index === 0 ? "主理人位置" : `${index}号好友位置`}
+                    className="flex-1 bg-transparent py-1.5 md:py-2 px-3 md:px-4 text-lg md:text-xl font-bold placeholder:text-gray-400 outline-none"
+                    placeholder={index === 0 ? "点击右侧图标定位" : "输入好友地址"}
                     value={addr}
                     onChange={(e) => handleInputChange(index, e.target.value)}
                   />
@@ -241,12 +236,12 @@ export default function Home() {
                   {index === 0 ? (
                     <button 
                       onClick={handleLocate} 
-                      className="w-10 h-10 bg-gray-100 rounded-full neo-border flex items-center justify-center active:scale-90 transition-transform"
+                      className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 rounded-full neo-border flex items-center justify-center active:scale-90 transition-transform mr-0.5 md:mr-1"
                     >
                       {isLocating ? (
                         <div className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin"/>
                       ) : (
-                        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="3">
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" strokeWidth="3">
                           <circle cx="12" cy="12" r="10" />
                           <path d="M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
                         </svg>
@@ -255,7 +250,7 @@ export default function Home() {
                   ) : (
                     <button 
                       onClick={() => handleRemoveUser(index)} 
-                      className="w-8 h-8 bg-red-400 rounded-full neo-border flex items-center justify-center text-white font-black active:scale-90"
+                      className="w-8 h-8 md:w-10 md:h-10 bg-red-400 rounded-full neo-border flex items-center justify-center text-white font-black active:scale-90 mr-1 md:mr-2"
                     >
                       ✕
                     </button>
@@ -267,28 +262,28 @@ export default function Home() {
             {inputs.length < MAX_USERS && (
               <button 
                 onClick={handleAddUser} 
-                className="flex items-center gap-3 px-4 py-2 group"
+                className="flex items-center gap-3 md:gap-4 px-4 md:px-6 py-2 group"
               >
-                <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-black text-xl neo-border group-hover:scale-110 transition-transform">+</div>
-                <span className="text-lg font-black text-black">添加一位好友</span>
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-black text-white rounded-full flex items-center justify-center font-black text-xl md:text-2xl neo-border group-hover:scale-110 transition-transform">+</div>
+                <span className="text-lg md:text-xl font-black text-black">添加一位好友</span>
               </button>
             )}
           </div>
 
           {/* 偏好选择 */}
-          <div className="space-y-4">
-            <div className="flex gap-5 overflow-x-auto py-2 no-scrollbar">
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex gap-4 md:gap-6 overflow-x-auto py-2 no-scrollbar">
               {PREFERENCE_OPTIONS.map((opt) => (
-                <div key={opt.label} className="flex flex-col items-center gap-3 shrink-0">
+                <div key={opt.label} className="flex flex-col items-center gap-3 md:gap-4 shrink-0">
                   <button
                     onClick={() => setSelectedType(opt.label)}
-                    className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl neo-border transition-all ${
+                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl neo-border transition-all ${
                       selectedType === opt.label ? "bg-[#B2E4FF] -translate-y-2 neo-shadow" : "bg-white"
                     }`}
                   >
                     {opt.icon}
                   </button>
-                  <span className="text-xs font-black bg-black text-white px-3 py-1 rounded-full">
+                  <span className="text-xs md:text-sm font-black bg-black text-white px-3 py-1 md:px-4 md:py-1.5 rounded-full">
                     {opt.label}
                   </span>
                 </div>
@@ -298,7 +293,7 @@ export default function Home() {
             {selectedType === "其他" && (
               <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                 <input
-                  className="w-full bg-white p-4 neo-border neo-shadow rounded-2xl text-lg font-bold outline-none placeholder:text-gray-400"
+                  className="w-full bg-white p-4 md:p-5 neo-border neo-shadow rounded-2xl text-lg md:text-xl font-bold outline-none placeholder:text-gray-400"
                   placeholder="想去哪里？比如：火锅、电影院..."
                   value={customType}
                   onChange={(e) => setCustomType(e.target.value)}
@@ -309,18 +304,18 @@ export default function Home() {
           </div>
 
           {/* 搜索按钮 */}
-          <div className="pt-4">
+          <div className="pt-4 md:pt-6">
             <button 
               onClick={handleSearch} 
               disabled={isSearching} 
-              className="w-full bg-black text-white py-6 rounded-[2rem] font-black text-3xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
+              className="w-full bg-black text-white py-6 md:py-8 rounded-[2rem] md:rounded-[2.5rem] font-black text-2xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
             >
               {isSearching ? "查找中..." : "寻找地点！"}
             </button>
           </div>
 
           {/* 对比模式复选框 */}
-          <label className={`flex items-center gap-3 select-none ${isSearching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+          <label className={`flex items-center gap-3 md:gap-4 select-none ${isSearching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
             <div className="relative">
               <input
                 type="checkbox"
@@ -329,10 +324,10 @@ export default function Home() {
                 disabled={isSearching}
                 className="peer sr-only"
               />
-              <div className="w-6 h-6 bg-white neo-border neo-shadow peer-checked:bg-blue-400 transition-colors"></div>
-              {compareMode && <div className="absolute inset-0 flex items-center justify-center text-black font-black">✓</div>}
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-white neo-border neo-shadow peer-checked:bg-blue-400 transition-colors"></div>
+              {compareMode && <div className="absolute inset-0 flex items-center justify-center text-black font-black text-lg md:text-xl">✓</div>}
             </div>
-            <span className="text-lg font-black text-black italic">查找时进入对比模式</span>
+            <span className="text-lg md:text-xl font-black text-black italic">查找时进入对比模式</span>
           </label>
 
           {/* 结果展示 */}
@@ -393,7 +388,7 @@ export default function Home() {
                     <div className="space-y-3 bg-gray-50 p-4 neo-border">
                       {item.time_details?.map((detail, idx) => (
                         <div key={idx} className="flex justify-between items-center text-base">
-                          <span className="font-bold text-gray-600">{getLabel(idx)}</span>
+                          <span className="font-black text-black italic">{getLabel(idx)}</span>
                           <div className="flex items-center gap-2">
                             {detail.tag && i !== 0 && (
                               <span className="text-[10px] bg-black text-white px-2 py-0.5 font-black uppercase">

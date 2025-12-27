@@ -35,7 +35,15 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 4. Redesign category selection with circular buttons and bottom labels. **Done**
 5. Update search button to a large black pill with high contrast. **Done**
 6. Apply consistent borders and shadows to result cards. **Done**
+7. Remove icons from address input fields and add styled labels ("我/好朋友#1", etc.) above them. **Done**
+8. Optimize desktop layout by increasing sidebar width and scaling content. **Done**
+9. Update preference options: remove "美食" and "酒吧", add "图书馆". **Done**
+10. Refine mobile font sizes and spacing for better readability. **Done**
 
 ## Work Log (UI Redesign)
 - Steps 1-6: Implemented a complete UI overhaul using a "neo-brutalism" aesthetic.
+- Step 7: Refined the input section by removing redundant icons and adding bold, italic labels above each field.
+- Step 8: Adjusted desktop styles: increased sidebar width to 500px, scaled up titles, inputs, and buttons for better visibility on larger screens.
+- Step 9: Updated preference options based on user feedback, replacing "美食" and "酒吧" with "图书馆".
+- Step 10: Optimized mobile UI by reducing font sizes for headers, inputs, and buttons while maintaining the bold "neo-brutalism" style.
 - Colors: Main background set to yellow (#FCE682), using black borders and hard shadows throughout for a sticker-like feel.
