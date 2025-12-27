@@ -20,7 +20,7 @@ const MapView = dynamic(
 
 const MAX_USERS = 5;
 
-const PREFERENCE_OPTIONS = ["咖啡厅", "公园", "图书馆", "自定义"];
+const PREFERENCE_OPTIONS = ["咖啡厅", "公园", "图书馆", "其他"];
 
 export default function Home() {
   const [inputs, setInputs] = useState<string[]>(["", ""]);
@@ -31,6 +31,12 @@ export default function Home() {
   const [customType, setCustomType] = useState("");
   const [compareMode, setCompareMode] = useState(false);
   const [displayCompareMode, setDisplayCompareMode] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const getLabel = (index: number) => {
     if (index === 0) return "我/好朋友#1"; 
@@ -45,7 +51,7 @@ export default function Home() {
 
   const handleAddUser = () => {
     if (inputs.length >= MAX_USERS) {
-      alert(`最多只能添加${MAX_USERS}位用户哦！`);
+      showToast(`最多只能添加${MAX_USERS}位用户哦！`, "error");
       return;
     }
     setInputs([...inputs, ""]);
@@ -53,7 +59,7 @@ export default function Home() {
 
   const handleRemoveUser = (indexToRemove: number) => {
     if (inputs.length <= 2) {
-      alert("至少需要两个人哦！");
+      showToast("至少需要两个人哦！", "error");
       return;
     }
     const newInputs = inputs.filter((_, index) => index !== indexToRemove);
@@ -65,8 +71,9 @@ export default function Home() {
     try {
       const location = await getCurrentLocation();
       handleInputChange(0, location.address);
+      showToast("定位成功");
     } catch (error: any) {
-      alert(error.message || error);
+      showToast(error.message || error, "error");
     } finally {
       setIsLocating(false);
     }
@@ -76,9 +83,9 @@ export default function Home() {
     const clipboardText = [shopName.trim(), address.trim()].filter(Boolean).join(" ");
     if (!clipboardText) return;
     navigator.clipboard.writeText(clipboardText).then(() => {
-      alert("地址已复制，快去发给好友吧～");
+      showToast("地址已复制，快去发给好友吧～");
     }).catch(() => {
-      alert("复制失败，请尝试手动长按复制");
+      showToast("复制失败，请尝试手动长按复制", "error");
     });
   };
 
@@ -113,14 +120,14 @@ export default function Home() {
   const handleSearch = async () => {
     const validLocations = inputs.filter((i) => i.trim() !== "");
     if (validLocations.length < 2) {
-      alert("请至少输入两个地址！");
+      showToast("请至少输入两个地址！", "error");
       return;
     }
 
     let finalPreference = selectedType;
-    if (selectedType === "自定义") {
+    if (selectedType === "其他") {
       if (!customType.trim()) {
-        alert("请输入场所类型");
+        showToast("请输入场所类型", "error");
         return;
       }
       finalPreference = customType.trim();
@@ -144,10 +151,10 @@ export default function Home() {
           document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' });
         }, 300);
       } else {
-        alert("未找到合适地点");
+        showToast("未找到合适地点", "error");
       }
     } catch (error) {
-      alert("查找失败，请稍后重试");
+      showToast("查找失败，请稍后重试", "error");
     } finally {
       setIsSearching(false);
     }
@@ -158,6 +165,18 @@ export default function Home() {
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-gray-100 flex flex-col md:flex-row">
       {isSearching && <LoadingOverlay />}
+      
+      {/* Toast 提示 */}
+      {toast && (
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={`px-6 py-3 rounded-full shadow-lg text-white text-sm font-bold flex items-center gap-2 ${
+            toast.type === "success" ? "bg-green-500" : "bg-red-500"
+          }`}>
+            <span>{toast.type === "success" ? "✅" : "⚠️"}</span>
+            {toast.message}
+          </div>
+        </div>
+      )}
       
       {/* 地图区域 */}
       <div className="absolute top-0 left-0 w-full h-[45%] z-0 md:relative md:h-full md:flex-1 md:order-2">
@@ -205,13 +224,13 @@ export default function Home() {
           </div>
 
           {/* 偏好选择 */}
-          <div>
+          <div className="space-y-3">
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
               {PREFERENCE_OPTIONS.map((option) => (
                 <button
                   key={option}
                   onClick={() => setSelectedType(option)}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all shrink-0 ${
                     selectedType === option ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200"
                   }`}
                 >
@@ -219,6 +238,18 @@ export default function Home() {
                 </button>
               ))}
             </div>
+            
+            {selectedType === "其他" && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                <input
+                  className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
+                  placeholder="想去哪里？比如：火锅、电影院、密室..."
+                  value={customType}
+                  onChange={(e) => setCustomType(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
 
           {/* 搜索按钮 */}

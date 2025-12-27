@@ -9,10 +9,15 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 3. Integrate `LoadingOverlay` into `src/app/page.tsx` using the `isSearching` state. **Done**
 4. Verify the loading animation and text display. **Done**
 5. Fix mobile zoom issue by increasing input font size and updating viewport settings.
-6. Fix mobile layout offset by ensuring proper centering and viewport handling.
+6. Fix mobile layout offset by ensuring proper centering and viewport handling. **Done**
+7. Rename "自定义" to "其他" and add custom input field for preferences. **Done**
+8. Replace native `alert` with a custom Toast notification system. **Done**
 
 ## Work Log
 - Step 1: Created `src/components/LoadingOverlay.tsx` with a basic structure and loading animation.
 - Step 2: Added `animate-text-slide` animation to `src/app/globals.css` and applied frosted glass effect using Tailwind classes in `LoadingOverlay`.
 - Step 3: Imported and integrated `LoadingOverlay` into the main `Home` component in `src/app/page.tsx`, controlled by the `isSearching` state.
 - Step 4: Manually verified the logic and styles.
+- Step 5: Fixed mobile zoom and layout issues by adding viewport settings and increasing font size.
+- Step 6: Updated preference options: renamed "自定义" to "其他" and added a conditional input field for custom categories.
+- Step 7: Implemented a custom Toast notification system in `src/app/page.tsx` and replaced all native `alert` calls for a better user experience.
