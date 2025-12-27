@@ -1,38 +1,10 @@
-import { SearchRequest, SearchResponse } from "../types";
+// src/services/api.ts
+import { SearchRequest, SearchResponse, TimeDetail } from "../types";
 
-// 修改返回类型：现在返回的是一个数组 Promise<SearchResponse[]>
 export const fetchMeetingPoint = async (payload: SearchRequest): Promise<SearchResponse[]> => {
   try {
+    // ⚠️ 记得确保这里 next.config.ts 里的代理配置是针对新后端的
     const PROXY_URL = "/api/proxy/stores"; 
-
-    // 如果要测试，可以把这里改为 true，查看多结果的模拟效果
-    const USE_MOCK = false; 
-
-    if (USE_MOCK) {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return [
-        {
-          shop_name: "Mock-麦当劳(南京东路店)",
-          latitude: 31.2304,
-          longitude: 121.4737,
-          address: "南京东路888号",
-          time_info: {
-            [payload.user_locations[0]]: "约15分钟",
-            [payload.user_locations[1]]: "约45分钟",
-          }
-        },
-        {
-          shop_name: "Mock-麦当劳(静安寺店)",
-          latitude: 31.2230,
-          longitude: 121.4450,
-          address: "南京西路1688号",
-          time_info: {
-            [payload.user_locations[0]]: "约30分钟",
-            [payload.user_locations[1]]: "约30分钟",
-          }
-        }
-      ];
-    }
 
     const res = await fetch(PROXY_URL, {
       method: "POST",
@@ -40,7 +12,7 @@ export const fetchMeetingPoint = async (payload: SearchRequest): Promise<SearchR
       body: JSON.stringify({
         user_locations: payload.user_locations, 
         preference_type: payload.preference_type, 
-        num: 2, // 告诉后端：我们要 2 个推荐！
+        num: 2, // 哪怕你要2个，后端不一定给够，做好兼容
       }),
     });
 
@@ -50,14 +22,15 @@ export const fetchMeetingPoint = async (payload: SearchRequest): Promise<SearchR
 
     const data = await res.json();
 
-    // 核心修改：遍历后端返回的所有结果，全部清洗并返回
+    // 核心修改：适配新版接口结构
     if (Array.isArray(data) && data.length > 0) {
       return data.map((item: any) => ({
         shop_name: item.store,   
         latitude: Number(item.lat),      
         longitude: Number(item.long),    
-        address: item.store,
-        time_info: item.time || {} 
+        address: item.store, // 后端暂时没单独返回 address，用店名代替
+        // ✨ 直接把后端的 time 数组赋值给 time_details
+        time_details: item.time as TimeDetail[] 
       }));
     }
 
