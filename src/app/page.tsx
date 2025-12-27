@@ -33,6 +33,9 @@ export default function Home() {
   const [selectedType, setSelectedType] = useState("咖啡厅");
   const [customType, setCustomType] = useState("");
 
+  // ✨ 新增状态：是否显示所有方案（默认为 false，只显示公平方案）
+  const [showAllResults, setShowAllResults] = useState(false);
+
   const getLabel = (index: number) => {
     if (index === 0) return "碰面主理人"; 
     return `好友${toChineseNum(index)}号`;
@@ -110,12 +113,16 @@ export default function Home() {
     }
   };
 
+  // ✨ 核心逻辑：根据复选框状态决定要显示的列表
+  // 如果 showAllResults 为 true，显示所有；否则只切片取第1个
+  const displayResults = showAllResults ? results : results.slice(0, 1);
+
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-gray-100 flex flex-col md:flex-row">
       
       {/* --- 地图区域 --- */}
       <div className="absolute top-0 left-0 w-full h-[45%] z-0 md:relative md:h-full md:flex-1 md:order-2">
-        <MapView locations={results} />
+        <MapView locations={displayResults} />
         <div className="md:hidden absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white/80 to-transparent pointer-events-none z-10" />
       </div>
 
@@ -210,65 +217,92 @@ export default function Home() {
             )}
           </div>
 
-          <button 
-            onClick={handleSearch} 
-            disabled={isSearching} 
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all flex justify-center items-center"
-          >
-            {isSearching ? "正在计算最佳地点..." : "🚀 开始查找"}
-          </button>
+          <div>
+            <button 
+              onClick={handleSearch} 
+              disabled={isSearching} 
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all flex justify-center items-center"
+            >
+              {isSearching ? "正在计算最佳地点..." : "🚀 开始查找"}
+            </button>
+
+            {/* ✨ 新增：复选框区域 */}
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <input 
+                type="checkbox" 
+                id="showAllResults" 
+                checked={showAllResults}
+                onChange={(e) => setShowAllResults(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <label htmlFor="showAllResults" className="text-sm text-gray-500 select-none cursor-pointer">
+                显示更多备选方案（不仅仅是折中地点）
+              </label>
+            </div>
+          </div>
 
           {/* --- 结果显示区域 --- */}
-          {results.length > 0 && (
+          {displayResults.length > 0 && (
             <div id="result-section" className="flex flex-col gap-6 pt-4">
               <div className="flex items-center gap-2">
                 <span className="w-1 h-6 bg-green-500 rounded-full"/>
-                <h3 className="font-bold text-gray-800 text-lg">推荐方案</h3>
+                <h3 className="font-bold text-gray-800 text-lg">
+                   {showAllResults ? "所有方案" : "最佳折中方案"}
+                </h3>
               </div>
               
-              {results.map((item, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded mb-1 inline-block">方案 {i+1}</span>
-                      <h4 className="text-xl font-bold text-gray-900">{item.shop_name}</h4>
-                      <p className="text-xs text-gray-500 mt-1 truncate max-w-[200px]">{item.address}</p>
+              {displayResults.map((item, i) => {
+                // ✨ 核心判断：第一个结果 (index 0) 永远是【公平推荐】
+                const isFairRecommendation = i === 0;
+                
+                return (
+                  <div key={i} className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow ${isFairRecommendation ? 'border-blue-200 ring-4 ring-blue-50/50' : 'border-gray-100'}`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        {/* ✨ 标签逻辑：第一个是公平，其他的算备选 */}
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded mb-1 inline-block ${
+                          isFairRecommendation 
+                            ? "bg-blue-600 text-white" 
+                            : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {isFairRecommendation ? "⚖️ 公平推荐" : `备选方案 ${i+1}`}
+                        </span>
+                        
+                        <h4 className="text-xl font-bold text-gray-900 mt-1">{item.shop_name}</h4>
+                        <p className="text-xs text-gray-500 mt-1 truncate max-w-[200px]">{item.address}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {inputs.map((addr, idx) => {
+                        if (!addr.trim()) return null;
+                        
+                        const detail = item.time_details?.find(t => t.location === addr);
+                        const duration = detail ? detail.duration : "计算中...";
+                        const isFastest = detail?.tag === true;
+
+                        return (
+                          <div key={idx} className="flex justify-between items-center text-sm border-b border-dashed border-gray-100 last:border-0 pb-2 last:pb-0">
+                            <span className="text-gray-500">{idx === 0 ? "我" : `${idx}号`}</span>
+                            
+                            <div className="flex items-center gap-2">
+                              {/* ✨ 核心UI更新：如果 tag 为 true，显示图片同款样式 */}
+                              {isFastest && (
+                                <div className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded flex items-center gap-1 font-bold">
+                                  最快 🚀
+                                </div>
+                              )}
+                              <span className={`font-bold text-lg ${isFastest ? 'text-green-600' : 'text-gray-700'}`}>
+                                {duration}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    {/* 遍历当前输入框中的所有好友 */}
-                    {inputs.map((addr, idx) => {
-                      if (!addr.trim()) return null;
-                      
-                      // ✨ 新逻辑：在 time_details 数组中查找匹配的 location
-                      // 注意：后端返回的 location 应该和请求时的地址一致
-                      const detail = item.time_details?.find(t => t.location === addr);
-                      const duration = detail ? detail.duration : "计算中...";
-                      // ✨ 如果 tag 为 true，说明这是耗时最短的
-                      const isFastest = detail?.tag === true;
-
-                      return (
-                         <div key={idx} className="flex justify-between items-center text-sm border-b border-dashed border-gray-100 last:border-0 pb-2 last:pb-0">
-                           <span className="text-gray-500">{idx === 0 ? "我" : `${idx}号`}</span>
-                           
-                           <div className="flex items-center gap-2">
-                             {/* ✨ 如果是最短时间，显示绿色标签 */}
-                             {isFastest && (
-                               <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                                 最快 🚀
-                               </span>
-                             )}
-                             <span className={`font-bold ${isFastest ? 'text-green-600' : 'text-gray-700'}`}>
-                               {duration}
-                             </span>
-                           </div>
-                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
