@@ -2,11 +2,11 @@
 import { useState, useEffect } from "react";
 
 const LOADING_TEXTS = [
-  "又要见到好朋友啦",
-  "在哪里见面好呢",
-  "要不要善待一下经期的朋友",
-  "穿高跟的人脚很累了吧",
-  "要碰头啦！",
+  "又要见到好朋友啦 ",
+  "在哪里见面好呢 ",
+  "要不要善待一下经期的朋友 ",
+  "穿高跟的人脚很累了吧 ",
+  "要碰头啦！ ",
 ];
 
 export default function LoadingOverlay() {
