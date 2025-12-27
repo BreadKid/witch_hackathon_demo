@@ -43,7 +43,7 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 12. Adjust "寻找地点！" button to fit content with appropriate padding. **Done**
 13. Refine LoadingOverlay text and styles to match Neo-brutalism theme. **Done**
 14. Adjust LoadingOverlay footer text size to be smaller for visual hierarchy. **Done**
-15. Implement draggable Bottom Sheet for mobile with snapping (15%, 60%, 95%). **Done**
+15. Implement draggable Bottom Sheet for mobile with snapping (15%, 60%, 70%). **Done**
 16. Fix background gap by making MapView full-height on mobile. **Done**
 
 ## Work Log (UI Redesign)
@@ -56,6 +56,6 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 - Step 12: Redesigned the search button to no longer be full-width, using `px-10` padding to create a balanced, "breathing" size based on the text content.
 - Step 13: Updated `LoadingOverlay` with new scrolling texts and refined the UI to match the main app's bold aesthetic (yellow background, black borders, and slanted slogan box).
 - Step 14: Reduced the font size of the slogan in the loading overlay to `text-sm` to improve visual hierarchy against the main scrolling text.
-- Step 15: Added native touch gestures to the operational panel's handle. Users can now drag the panel up to 95% screen height or down to collapse it. The panel snaps to 15%, 60%, or 95% height for a smooth user experience, preventing it from exceeding the visible browser area.
+- Step 15: Added native touch gestures to the operational panel's handle. Users can now drag the panel up to 70% screen height (leaving 30% whitespace at the top) or down to collapse it. The panel snaps to 15%, 60%, or 70% height for a smooth user experience.
 - Step 16: Updated MapView to occupy `h-full` on mobile, ensuring it fills the entire background behind the Bottom Sheet and eliminating the yellow background gap when the panel is collapsed.
 - Colors: Main background set to yellow (#FCE682), using black borders and hard shadows throughout for a sticker-like feel.

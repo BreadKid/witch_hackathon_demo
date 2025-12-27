@@ -60,16 +60,16 @@ export default function Home() {
     
     // Constraints
     if (newHeight < 15) newHeight = 15;
-    if (newHeight > 95) newHeight = 95;
+    if (newHeight > 70) newHeight = 70;
     
     setPanelHeight(newHeight);
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    // Snap points: 95, 60, 15
-    if (panelHeight > 80) {
-      setPanelHeight(95);
+    // Snap points: 70, 60, 15
+    if (panelHeight > 65) {
+      setPanelHeight(70);
     } else if (panelHeight < 40) {
       setPanelHeight(15);
     } else {
