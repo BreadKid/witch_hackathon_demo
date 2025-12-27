@@ -31,7 +31,8 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedType, setSelectedType] = useState("咖啡厅");
   const [customType, setCustomType] = useState("");
-  const [showAllResults, setShowAllResults] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [displayCompareMode, setDisplayCompareMode] = useState(false);
 
   const getLabel = (index: number) => {
     if (index === 0) return "碰面主理人"; 
@@ -124,12 +125,14 @@ export default function Home() {
 
     setIsSearching(true);
     setResults([]);
+    const currentCompareMode = compareMode;
+    setDisplayCompareMode(currentCompareMode);
 
     try {
       const data = await fetchMeetingPoint({
         user_locations: validLocations,
         preference_type: finalPreference,
-        num: showAllResults ? 0 : 1, 
+        num: currentCompareMode ? 0 : 1, 
       });
 
       if (data && data.length > 0) {
@@ -147,7 +150,7 @@ export default function Home() {
     }
   };
 
-  const displayResults = showAllResults ? results : results.slice(0, 1);
+  const displayResults = displayCompareMode ? results : results.slice(0, 1);
 
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-gray-100 flex flex-col md:flex-row">
@@ -174,8 +177,8 @@ export default function Home() {
               <div key={index} className="flex gap-2 items-center">
                 <div className="relative flex-1">
                   <input
-                    className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={`${getLabel(index)}位置`}
+                    className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
+                    placeholder={index === 0 ? "输入主理人地址" : "输入好朋友地址"}
                     value={addr}
                     onChange={(e) => handleInputChange(index, e.target.value)}
                   />
@@ -214,6 +217,18 @@ export default function Home() {
             {isSearching ? "查找中..." : "🚀 开始查找"}
           </button>
 
+          {/* 对比模式复选框 */}
+          <label className={`flex items-center gap-2 select-none ${isSearching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+            <input
+              type="checkbox"
+              checked={compareMode}
+              onChange={(e) => setCompareMode(e.target.checked)}
+              disabled={isSearching}
+              className={`w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${isSearching ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            />
+            <span className="text-sm text-gray-600">查找时进入对比模式</span>
+          </label>
+
           {/* 结果展示 */}
           {displayResults.length > 0 && (
             <div id="result-section" className="flex flex-col gap-4 pt-4">
@@ -221,7 +236,12 @@ export default function Home() {
                 <div key={i} className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm ring-4 ring-blue-50/30">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 overflow-hidden">
-                      <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-bold">Recommended</span>
+                      {/* 方案标签：第一个显示"公平"，其他根据tag判断 */}
+                      {i === 0 ? (
+                        <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-bold">⚖️ 公平方案</span>
+                      ) : (
+                        <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded uppercase font-bold">🎯 备选方案</span>
+                      )}
                       <h4 className="text-xl font-bold text-gray-900 mt-1 truncate">{item.shop_name}</h4>
                       <p className="text-xs text-gray-400 mt-1 truncate">{item.address}</p>
                     </div>
@@ -257,8 +277,18 @@ export default function Home() {
                   <div className="space-y-2">
                     {item.time_details?.map((detail, idx) => (
                       <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0">
-                        <span className="text-gray-500">{idx === 0 ? "我" : `${idx}号`}</span>
-                        <span className={`font-bold ${detail.tag ? 'text-green-600' : 'text-gray-700'}`}>{detail.duration}</span>
+                        <span className="text-gray-500">{detail.location || (idx === 0 ? "我" : `${idx}号`)}</span>
+                        {/* 当tag为true且不是第一个方案时，显示"最快"火箭标记 */}
+                        {detail.tag && i !== 0 ? (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                              最快 🚀
+                            </span>
+                            <span className="font-bold text-green-600">{detail.duration}</span>
+                          </div>
+                        ) : (
+                          <span className={`font-bold ${detail.tag ? 'text-green-600' : 'text-gray-700'}`}>{detail.duration}</span>
+                        )}
                       </div>
                     ))}
                   </div>
