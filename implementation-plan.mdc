@@ -27,3 +27,15 @@ Add a loading page with a frosted glass mask and scrolling text that appears aft
 - Step 8: Enhanced scheme cards in `src/app/page.tsx` to display "偏爱朋友X" or "善待多人" green labels based on the favored friend tags.
 - Step 9: Simplified scheme labels by removing "备选方案" and updating favoring text to "善待好朋友X".
 - Step 11: Updated application title to "碰头！", added slogan "别多想了 见面重要", and changed the icon to 🤝.
+
+## UI Redesign (Neo-brutalism Style)
+1. Add utility classes for thick borders and hard shadows in `globals.css`. **Done**
+2. Redesign the header with slanted boxes and bold italic typography. **Done**
+3. Update address inputs to pill shapes with colored user icons and neo-brutalism styling. **Done**
+4. Redesign category selection with circular buttons and bottom labels. **Done**
+5. Update search button to a large black pill with high contrast. **Done**
+6. Apply consistent borders and shadows to result cards. **Done**
+
+## Work Log (UI Redesign)
+- Steps 1-6: Implemented a complete UI overhaul using a "neo-brutalism" aesthetic.
+- Colors: Main background set to yellow (#FCE682), using black borders and hard shadows throughout for a sticker-like feel.
