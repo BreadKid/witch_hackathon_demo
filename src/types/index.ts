@@ -12,4 +12,5 @@ export interface SearchRequest {
     latitude: number;  // 39.909
     longitude: number; // 116.397
     address: string;   // "长安街1号"
+    time_info: Record<string, string>;
   }
