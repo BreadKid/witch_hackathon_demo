@@ -60,16 +60,16 @@ export default function Home() {
     
     // Constraints
     if (newHeight < 15) newHeight = 15;
-    if (newHeight > 100) newHeight = 100;
+    if (newHeight > 95) newHeight = 95;
     
     setPanelHeight(newHeight);
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    // Snap points: 100, 60, 15
+    // Snap points: 95, 60, 15
     if (panelHeight > 80) {
-      setPanelHeight(100);
+      setPanelHeight(95);
     } else if (panelHeight < 40) {
       setPanelHeight(15);
     } else {
@@ -232,7 +232,7 @@ export default function Home() {
       )}
       
       {/* 地图区域 */}
-      <div className="absolute top-0 left-0 w-full h-[45%] z-0 md:relative md:h-full md:flex-1 md:order-2 opacity-80">
+      <div className="absolute top-0 left-0 w-full h-full z-0 md:relative md:flex-1 md:order-2">
         <MapView locations={displayResults} />
       </div>
 

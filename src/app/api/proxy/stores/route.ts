@@ -1,7 +1,7 @@
 // src/app/api/proxy/stores/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = "https://agrostographic-kasie-lullingly.ngrok-free.dev/stores";
+const BACKEND_URL = "https://hackathon.zeabur.app/stores";
 
 export async function POST(request: NextRequest) {
   try {
