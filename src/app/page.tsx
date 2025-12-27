@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { getCurrentLocation } from "../utils/amapHelper";
 import { fetchMeetingPoint } from "../services/api";
@@ -37,6 +37,54 @@ export default function Home() {
   const [compareMode, setCompareMode] = useState(false);
   const [displayCompareMode, setDisplayCompareMode] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Mobile Bottom Sheet Dragging State
+  const [panelHeight, setPanelHeight] = useState(60);
+  const [isDragging, setIsDragging] = useState(false);
+  const startY = useRef(0);
+  const startHeight = useRef(60);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY;
+    startHeight.current = panelHeight;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = startY.current - currentY;
+    // Calculate new height in vh (viewport height)
+    const deltaHeight = (deltaY / window.innerHeight) * 100;
+    let newHeight = startHeight.current + deltaHeight;
+    
+    // Constraints
+    if (newHeight < 15) newHeight = 15;
+    if (newHeight > 100) newHeight = 100;
+    
+    setPanelHeight(newHeight);
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    // Snap points: 100, 60, 15
+    if (panelHeight > 80) {
+      setPanelHeight(100);
+    } else if (panelHeight < 40) {
+      setPanelHeight(15);
+    } else {
+      setPanelHeight(60);
+    }
+  };
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -189,7 +237,10 @@ export default function Home() {
       </div>
 
       {/* 操作面板 */}
-      <div className="absolute bottom-0 left-0 w-full h-[60%] z-10 bg-[#FCE682] rounded-t-[3rem] md:relative md:h-full md:w-[500px] md:max-w-xl md:rounded-none md:order-1 flex flex-col shadow-[10px_0_30px_rgba(0,0,0,0.1)]">
+      <div 
+        className={`absolute bottom-0 left-0 w-full z-10 bg-[#FCE682] rounded-t-[3rem] md:relative md:h-full md:w-[500px] md:max-w-xl md:rounded-none md:order-1 flex flex-col shadow-[10px_0_30px_rgba(0,0,0,0.1)] transition-all ${isDragging ? 'duration-0' : 'duration-300 ease-out'}`}
+        style={isMobile ? { height: `${panelHeight}vh` } : {}}
+      >
         {/* 背景装饰 */}
         <div className="absolute top-10 right-10 opacity-20 pointer-events-none">
           <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor" className="text-pink-400 rotate-12">
@@ -200,7 +251,12 @@ export default function Home() {
           <div className="w-40 h-40 bg-green-300 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="w-full flex justify-center pt-4 pb-2 md:hidden">
+        <div 
+          className="w-full flex justify-center pt-4 pb-2 md:hidden cursor-grab active:cursor-grabbing touch-none"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="w-16 h-2 bg-black/10 rounded-full" />
         </div>
 
