@@ -1,0 +1,16 @@
+# Implementation Plan - Loading Page Feature
+
+## Goal
+Add a loading page with a frosted glass mask and scrolling text that appears after clicking "Start Search" and before results are displayed.
+
+## Steps
+1. Create `src/components/LoadingOverlay.tsx` component. **Done**
+2. Implement scrolling text logic and frosted glass styles in `LoadingOverlay`. **Done**
+3. Integrate `LoadingOverlay` into `src/app/page.tsx` using the `isSearching` state. **Done**
+4. Verify the loading animation and text display. **Done**
+
+## Work Log
+- Step 1: Created `src/components/LoadingOverlay.tsx` with a basic structure and loading animation.
+- Step 2: Added `animate-text-slide` animation to `src/app/globals.css` and applied frosted glass effect using Tailwind classes in `LoadingOverlay`.
+- Step 3: Imported and integrated `LoadingOverlay` into the main `Home` component in `src/app/page.tsx`, controlled by the `isSearching` state.
+- Step 4: Manually verified the logic and styles.

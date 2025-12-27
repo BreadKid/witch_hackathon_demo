@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { getCurrentLocation } from "../utils/amapHelper";
 import { fetchMeetingPoint } from "../services/api";
 import { SearchResponse } from "../types";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 const MapView = dynamic(
   () => import("../components/MapView").then((mod) => mod.default),
@@ -156,6 +157,7 @@ export default function Home() {
 
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-gray-100 flex flex-col md:flex-row">
+      {isSearching && <LoadingOverlay />}
       
       {/* 地图区域 */}
       <div className="absolute top-0 left-0 w-full h-[45%] z-0 md:relative md:h-full md:flex-1 md:order-2">
