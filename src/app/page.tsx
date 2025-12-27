@@ -17,10 +17,7 @@ const MapView = dynamic(
   }
 );
 
-const toChineseNum = (num: number) => {
-  const chineseNums = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-  return chineseNums[num] || num;
-};
+const MAX_USERS = 5;
 
 const PREFERENCE_OPTIONS = ["咖啡厅", "公园", "图书馆", "自定义"];
 
@@ -35,8 +32,8 @@ export default function Home() {
   const [displayCompareMode, setDisplayCompareMode] = useState(false);
 
   const getLabel = (index: number) => {
-    if (index === 0) return "碰面主理人"; 
-    return `好友${toChineseNum(index)}号`;
+    if (index === 0) return "我/好朋友#1"; 
+    return `好朋友#${index + 1}`;
   };
 
   const handleInputChange = (index: number, value: string) => {
@@ -46,6 +43,10 @@ export default function Home() {
   };
 
   const handleAddUser = () => {
+    if (inputs.length >= MAX_USERS) {
+      alert(`最多只能添加${MAX_USERS}位用户哦！`);
+      return;
+    }
     setInputs([...inputs, ""]);
   };
 
@@ -174,25 +175,30 @@ export default function Home() {
           {/* 输入框组 */}
           <div className="flex flex-col gap-3">
             {inputs.map((addr, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <div className="relative flex-1">
-                  <input
-                    className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
-                    placeholder={index === 0 ? "输入主理人地址" : "输入好朋友地址"}
-                    value={addr}
-                    onChange={(e) => handleInputChange(index, e.target.value)}
-                  />
+              <div key={index} className="flex flex-col gap-1">
+                <span className="text-xs text-gray-500 ml-1">{getLabel(index)}</span>
+                <div className="flex gap-2 items-center">
+                  <div className="relative flex-1">
+                    <input
+                      className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
+                      placeholder={index === 0 ? "点击右侧图标进行定位" : "输入好朋友地址"}
+                      value={addr}
+                      onChange={(e) => handleInputChange(index, e.target.value)}
+                    />
+                  </div>
+                  {index === 0 ? (
+                    <button onClick={handleLocate} className="bg-blue-50 text-blue-600 p-3 rounded-xl aspect-square flex items-center justify-center">
+                      {isLocating ? <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"/> : "📍"}
+                    </button>
+                  ) : (
+                    <button onClick={() => handleRemoveUser(index)} className="bg-red-50 text-red-500 p-3 rounded-xl aspect-square flex items-center justify-center">✕</button>
+                  )}
                 </div>
-                {index === 0 ? (
-                  <button onClick={handleLocate} className="bg-blue-50 text-blue-600 p-3 rounded-xl aspect-square flex items-center justify-center">
-                    {isLocating ? <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"/> : "🧭"}
-                  </button>
-                ) : (
-                  <button onClick={() => handleRemoveUser(index)} className="bg-red-50 text-red-500 p-3 rounded-xl aspect-square flex items-center justify-center">✕</button>
-                )}
               </div>
             ))}
-            <button onClick={handleAddUser} className="text-sm text-gray-500 py-2 hover:text-blue-500">+ 添加一位好友</button>
+            {inputs.length < MAX_USERS && (
+              <button onClick={handleAddUser} className="text-sm text-gray-500 py-2 hover:text-blue-500">+ 添加一位好友</button>
+            )}
           </div>
 
           {/* 偏好选择 */}
@@ -277,7 +283,7 @@ export default function Home() {
                   <div className="space-y-2">
                     {item.time_details?.map((detail, idx) => (
                       <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 pb-2 last:border-0">
-                        <span className="text-gray-500">{detail.location || (idx === 0 ? "我" : `${idx}号`)}</span>
+                        <span className="text-gray-500">{getLabel(idx)}</span>
                         {/* 当tag为true且不是第一个方案时，显示"最快"火箭标记 */}
                         {detail.tag && i !== 0 ? (
                           <div className="flex items-center gap-2">
