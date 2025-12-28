@@ -364,7 +364,7 @@ export default function Home() {
             <button 
               onClick={handleSearch} 
               disabled={isSearching} 
-              className="px-10 md:px-16 py-4 md:py-6 bg-black text-white rounded-full font-black text-xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic"
+              className="px-10 md:px-16 py-4 md:py-6 bg-black text-white rounded-full font-black text-xl md:text-4xl neo-border neo-shadow active:translate-y-1 active:shadow-none transition-all uppercase italic whitespace-nowrap"
             >
               {isSearching ? "查找中..." : "寻找碰头地点！🚗"}
             </button>
