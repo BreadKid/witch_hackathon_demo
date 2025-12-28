@@ -54,6 +54,13 @@ export default function MapView({ locations }: MapViewProps) {
         map.addControl(new AMap.Scale());
         map.addControl(new AMap.ToolBar({ position: "RT" })); // 工具条放在右上角，避免被手机面板遮挡
 
+        // 点击地图空白处，隐藏 InfoWindow
+        map.on("click", () => {
+          if (map.clearInfoWindow) {
+            map.clearInfoWindow();
+          }
+        });
+
         mapInstanceRef.current = map;
       } catch (e) {
         console.error("地图加载失败", e);
