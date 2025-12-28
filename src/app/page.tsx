@@ -21,7 +21,6 @@ const MapView = dynamic(
 const MAX_USERS = 5;
 
 const PREFERENCE_OPTIONS = [
-  { label: "咖啡馆", icon: "☕" },
   { label: "公园", icon: "🌳" },
   { label: "图书馆", icon: "📚" },
   { label: "其他", icon: "➕" },
@@ -32,7 +31,7 @@ export default function Home() {
   const [results, setResults] = useState<SearchResponse[]>([]);
   const [isLocating, setIsLocating] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedType, setSelectedType] = useState("咖啡馆");
+  const [selectedType, setSelectedType] = useState("公园");
   const [customType, setCustomType] = useState("");
   const [compareMode, setCompareMode] = useState(false);
   const [displayCompareMode, setDisplayCompareMode] = useState(false);

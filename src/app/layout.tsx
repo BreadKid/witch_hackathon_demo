@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "聚会地点查找器",
-  description: "找到朋友们聚会的最公平中点",
+  title: "碰头！——会面地点查找器",
+  description: "找到朋友们聚会的公平方案和关照方案",
 };
 
 export const viewport: Viewport = {
