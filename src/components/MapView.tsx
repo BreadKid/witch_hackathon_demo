@@ -39,7 +39,7 @@ export default function MapView({ locations }: MapViewProps) {
         const AMap = await AMapLoader.load({
           key: AMAP_KEY,
           version: "2.0",
-          plugins: ["AMap.Scale", "AMap.ToolBar", "AMap.Marker"],
+          plugins: ["AMap.Scale", "AMap.ToolBar", "AMap.Marker", "AMap.InfoWindow"],
         });
 
         if (!mapContainerRef.current) return;
@@ -82,11 +82,23 @@ export default function MapView({ locations }: MapViewProps) {
 
     const map = mapInstanceRef.current;
 
-    // --- A. 清除旧标记 ---
+    // --- A. 文字处理助手函数 ---
+    const formatShopName = (name: string) => {
+      if (!name) return "";
+      // 1. 移除括号及其内容 (支持中英文括号)
+      let cleanName = name.replace(/[\(\uff08].*?[\)\uff09]/g, "");
+      // 2. 如果还是太长，截断
+      if (cleanName.length > 6) {
+        return cleanName.slice(0, 5) + "...";
+      }
+      return cleanName || name.slice(0, 4); // 如果移除括号后变空了，回退到原始截断
+    };
+
+    // --- B. 清除旧标记 ---
     map.remove(markersRef.current);
     markersRef.current = [];
 
-    // --- B. 创建新标记 ---
+    // --- C. 创建新标记 ---
     const newMarkers: any[] = [];
 
     locations.forEach((loc, index) => {
@@ -99,6 +111,8 @@ export default function MapView({ locations }: MapViewProps) {
         return;
       }
 
+      const displayName = loc.shop_name ? formatShopName(loc.shop_name) : (index + 1).toString();
+
       const marker = new AMap.Marker({
         position: [lng, lat],
         // 自定义标记内容：neo-brutalism 风格标记
@@ -108,44 +122,74 @@ export default function MapView({ locations }: MapViewProps) {
             display: flex;
             flex-direction: column;
             align-items: center;
+            cursor: pointer;
           ">
             <div style="
               background-color: #FCE682;
               color: black;
-              font-size: 16px;
+              font-size: 14px;
               font-weight: 900;
               font-style: italic;
-              min-width: 36px;
-              height: 36px;
-              padding: 0 10px;
+              min-width: 32px;
+              max-width: 120px;
+              height: 32px;
+              padding: 0 8px;
               display: flex;
               align-items: center;
               justify-content: center;
               border: 3px solid black;
               box-shadow: 4px 4px 0 0 black;
               white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             ">
-              ${loc.shop_name ? loc.shop_name.slice(0, 6) : index + 1}
+              ${displayName}
             </div>
             <div style="
               width: 0;
               height: 0;
-              border-left: 10px solid transparent;
-              border-right: 10px solid transparent;
-              border-top: 12px solid black;
+              border-left: 8px solid transparent;
+              border-right: 8px solid transparent;
+              border-top: 10px solid black;
               margin-top: -1px;
             "></div>
           </div>
         `,
-        offset: new AMap.Pixel(-18, -48), // 调整偏移让箭头指向准确位置
+        offset: new AMap.Pixel(-16, -42), 
         title: loc.shop_name || loc.address,
-        extData: { index: index } // 绑定数据方便后续点击交互
+        extData: { ...loc, index: index } // 存储完整数据
+      });
+
+      // --- D. 绑定点击事件，显示 InfoWindow ---
+      marker.on('click', () => {
+        const infoWindow = new AMap.InfoWindow({
+          content: `
+            <div style="
+              padding: 12px;
+              background: white;
+              border: 3px solid black;
+              box-shadow: 6px 6px 0 0 black;
+              font-family: sans-serif;
+            ">
+              <div style="font-weight: 900; font-size: 16px; margin-bottom: 4px; color: black;">
+                ${loc.shop_name || '未知位置'}
+              </div>
+              <div style="font-size: 13px; color: #666; line-height: 1.4;">
+                ${loc.address || '暂无详细地址'}
+              </div>
+            </div>
+          `,
+          offset: new AMap.Pixel(0, -35),
+          isCustom: true, // 使用自定义窗体
+          anchor: 'bottom-center'
+        });
+        infoWindow.open(map, marker.getPosition());
       });
 
       newMarkers.push(marker);
     });
 
-    // --- C. 添加标记到地图 ---
+    // --- E. 添加标记到地图 ---
     if (newMarkers.length > 0) {
       map.add(newMarkers);
       markersRef.current = newMarkers;
