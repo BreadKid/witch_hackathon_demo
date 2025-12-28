@@ -35,8 +35,8 @@ export default function LoadingOverlay() {
           </p>
         </div>
         <div className="mt-6 relative inline-block shrink-0">
-          <div className="absolute inset-0 bg-black -rotate-1"></div>
-          <p className="relative text-sm font-black text-white italic px-4 py-1 -rotate-1">
+          <div className="absolute inset-0 bg-[#FACC15] -rotate-1"></div>
+          <p className="relative text-sm font-black text-black italic px-4 py-1 -rotate-1">
             别多想了 见面重要
           </p>
         </div>

@@ -112,7 +112,7 @@ export default function Home() {
 
   const handleRemoveUser = (indexToRemove: number) => {
     if (inputs.length <= 2) {
-      showToast("至少需要两个人哦！", "error");
+      showToast("谁也不见的话咱碰谁的头！", "error");
       return;
     }
     const newInputs = inputs.filter((_, index) => index !== indexToRemove);
@@ -267,8 +267,8 @@ export default function Home() {
               碰头！
             </h1>
             <div className="relative inline-block">
-              <div className="absolute inset-0 bg-black -rotate-2 neo-border"></div>
-              <p className="relative text-xl md:text-4xl font-black text-white italic px-3 py-1.5 md:px-6 md:py-3 -rotate-2">
+              <div className="absolute inset-0 bg-[#FACC15] -rotate-2 neo-border"></div>
+              <p className="relative text-xl md:text-4xl font-black text-black italic px-3 py-1.5 md:px-6 md:py-3 -rotate-2">
                 别多想了 见面重要
               </p>
             </div>
