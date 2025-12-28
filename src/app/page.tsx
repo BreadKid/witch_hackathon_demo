@@ -222,7 +222,7 @@ export default function Home() {
       {/* Toast 提示 */}
       {toast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className={`px-6 py-3 neo-border neo-shadow text-black text-sm font-black flex items-center gap-2 ${
+          <div className={`px-6 py-3 neo-border neo-shadow text-black text-sm font-black flex items-center gap-2 whitespace-nowrap ${
             toast.type === "success" ? "bg-green-400" : "bg-red-400"
           }`}>
             <span>{toast.type === "success" ? "✅" : "⚠️"}</span>
