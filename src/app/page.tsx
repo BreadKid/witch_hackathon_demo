@@ -243,7 +243,7 @@ export default function Home() {
       >
         {/* 背景装饰 */}
         <div className="absolute top-10 right-10 opacity-20 pointer-events-none">
-          <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor" className="text-pink-400 rotate-12">
+          <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor" className="text-orange-400 rotate-12">
             <path d="M12 2l2.4 7.2h7.6l-6.1 4.4 2.3 7.4-6.2-4.5-6.2 4.5 2.3-7.4-6.1-4.4h7.6z" />
           </svg>
         </div>
