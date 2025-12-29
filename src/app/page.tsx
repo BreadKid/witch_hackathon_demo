@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { getCurrentLocation } from "../utils/amapHelper";
 import { fetchMeetingPoint, fetchAddressTips } from "../services/api";
@@ -44,8 +45,37 @@ export default function Home() {
   const [primaryTips, setPrimaryTips] = useState<AddressTip[]>([]);
   const [primaryTipsOpen, setPrimaryTipsOpen] = useState(false);
   const [primarySearching, setPrimarySearching] = useState(false);
+  const [primaryDropdownStyle, setPrimaryDropdownStyle] = useState<React.CSSProperties>({});
   const primaryDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const primaryInputContainerRef = useRef<HTMLDivElement>(null);
+  const primaryInputWrapperRef = useRef<HTMLDivElement>(null);
+
+  // 计算第一个输入框下拉列表位置
+  const updatePrimaryDropdownPosition = useCallback(() => {
+    if (!primaryInputWrapperRef.current) return;
+    const rect = primaryInputWrapperRef.current.getBoundingClientRect();
+    const isMobileView = window.innerWidth < 768;
+    
+    if (isMobileView) {
+      // 移动端：向上弹出
+      setPrimaryDropdownStyle({
+        position: 'fixed',
+        bottom: window.innerHeight - rect.top + 8,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: '40vh',
+      });
+    } else {
+      // 桌面端：向下弹出
+      setPrimaryDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: 240,
+      });
+    }
+  }, []);
 
   // Mobile Bottom Sheet Dragging State
   const [panelHeight, setPanelHeight] = useState(60);
@@ -196,6 +226,20 @@ export default function Home() {
       }
     };
   }, []);
+
+  // 更新第一个输入框下拉列表位置
+  useEffect(() => {
+    if (primaryTipsOpen && primaryTips.length > 0) {
+      updatePrimaryDropdownPosition();
+      const handleUpdate = () => updatePrimaryDropdownPosition();
+      window.addEventListener('scroll', handleUpdate, true);
+      window.addEventListener('resize', handleUpdate);
+      return () => {
+        window.removeEventListener('scroll', handleUpdate, true);
+        window.removeEventListener('resize', handleUpdate);
+      };
+    }
+  }, [primaryTipsOpen, primaryTips.length, updatePrimaryDropdownPosition]);
 
   const handleAddUser = () => {
     if (inputs.length >= MAX_USERS) {
@@ -381,42 +425,46 @@ export default function Home() {
                   {getLabel(index)}
                 </span>
                 {index === 0 ? (
-                  <div ref={primaryInputContainerRef} className="relative w-full">
-                    <div className="flex items-center gap-2 md:gap-4 bg-white p-2 md:p-4 neo-pill neo-border neo-shadow transition-transform group-focus-within:-translate-y-1">
-                      <input
-                        className="flex-1 bg-transparent py-1 md:py-2 px-2 md:px-4 text-base md:text-xl font-bold placeholder:text-gray-400 outline-none"
-                        placeholder="输入地址或点击定位"
-                        value={addr}
-                        onChange={handlePrimaryInputChange}
-                        onFocus={() => {
-                          if (primaryTips.length > 0) setPrimaryTipsOpen(true);
-                        }}
-                        autoComplete="off"
-                      />
-                      {primarySearching ? (
-                        <div className="w-9 h-9 md:w-12 md:h-12 flex items-center justify-center">
-                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"/>
-                        </div>
-                      ) : (
-                        <button 
-                          onClick={handleLocate} 
-                          className="w-9 h-9 md:w-12 md:h-12 bg-gray-100 rounded-full neo-border flex items-center justify-center active:scale-90 transition-transform"
-                        >
-                          {isLocating ? (
+                  <>
+                    <div ref={primaryInputContainerRef} className="relative w-full">
+                      <div ref={primaryInputWrapperRef} className="flex items-center gap-2 md:gap-4 bg-white p-2 md:p-4 neo-pill neo-border neo-shadow transition-transform group-focus-within:-translate-y-1">
+                        <input
+                          className="flex-1 bg-transparent py-1 md:py-2 px-2 md:px-4 text-base md:text-xl font-bold placeholder:text-gray-400 outline-none"
+                          placeholder="输入地址或点击定位"
+                          value={addr}
+                          onChange={handlePrimaryInputChange}
+                          onFocus={() => {
+                            if (primaryTips.length > 0) setPrimaryTipsOpen(true);
+                          }}
+                          autoComplete="off"
+                        />
+                        {primarySearching ? (
+                          <div className="w-9 h-9 md:w-12 md:h-12 flex items-center justify-center">
                             <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"/>
-                          ) : (
-                            <svg viewBox="0 0 24 24" className="w-5 h-5 md:w-7 md:h-7" fill="none" stroke="currentColor" strokeWidth="3">
-                              <circle cx="12" cy="12" r="10" />
-                              <path d="M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
-                            </svg>
-                          )}
-                        </button>
-                      )}
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={handleLocate} 
+                            className="w-9 h-9 md:w-12 md:h-12 bg-gray-100 rounded-full neo-border flex items-center justify-center active:scale-90 transition-transform"
+                          >
+                            {isLocating ? (
+                              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"/>
+                            ) : (
+                              <svg viewBox="0 0 24 24" className="w-5 h-5 md:w-7 md:h-7" fill="none" stroke="currentColor" strokeWidth="3">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    
-                    {/* 第一个输入框的地址建议下拉列表 */}
-                    {primaryTipsOpen && primaryTips.length > 0 && (
-                      <div className="absolute bottom-full left-0 right-0 mb-2 md:bottom-auto md:top-full md:mb-0 md:mt-2 bg-white neo-border neo-shadow z-[100] max-h-[40vh] md:max-h-60 overflow-y-auto">
+                    {/* 第一个输入框的地址建议下拉列表 - 使用 Portal 渲染到 body 避免被 overflow 裁剪 */}
+                    {primaryTipsOpen && primaryTips.length > 0 && typeof document !== 'undefined' && createPortal(
+                      <div 
+                        className="bg-white neo-border neo-shadow z-[9999] overflow-y-auto"
+                        style={primaryDropdownStyle}
+                      >
                         {primaryTips.map((tip, tipIndex) => (
                           <button
                             key={`primary-tip-${tipIndex}-${tip.id || tip.name}`}
@@ -431,9 +479,10 @@ export default function Home() {
                             </div>
                           </button>
                         ))}
-                      </div>
+                      </div>,
+                      document.body
                     )}
-                  </div>
+                  </>
                 ) : (
                   <AddressInput
                     value={addr}

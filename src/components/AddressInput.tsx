@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { fetchAddressTips } from "../services/api";
 import { AddressTip } from "../types";
 
@@ -22,9 +23,38 @@ export default function AddressInput({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputWrapperRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // 计算下拉列表位置（使用 fixed 定位避免被 overflow 裁剪）
+  const updateDropdownPosition = useCallback(() => {
+    if (!inputWrapperRef.current) return;
+    const rect = inputWrapperRef.current.getBoundingClientRect();
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+      // 移动端：向上弹出
+      setDropdownStyle({
+        position: 'fixed',
+        bottom: window.innerHeight - rect.top + 8,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: '40vh',
+      });
+    } else {
+      // 桌面端：向下弹出
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: 240,
+      });
+    }
+  }, []);
 
   // 防抖搜索
   const debouncedSearch = useCallback((keywords: string) => {
@@ -133,9 +163,24 @@ export default function AddressInput({
     };
   }, []);
 
+  // 更新下拉列表位置
+  useEffect(() => {
+    if (isOpen && tips.length > 0) {
+      updateDropdownPosition();
+      // 监听滚动和窗口变化以更新位置
+      const handleUpdate = () => updateDropdownPosition();
+      window.addEventListener('scroll', handleUpdate, true);
+      window.addEventListener('resize', handleUpdate);
+      return () => {
+        window.removeEventListener('scroll', handleUpdate, true);
+        window.removeEventListener('resize', handleUpdate);
+      };
+    }
+  }, [isOpen, tips.length, updateDropdownPosition]);
+
   return (
     <div ref={containerRef} className="relative w-full">
-      <div className="flex items-center gap-2 md:gap-4 bg-white p-2 md:p-4 neo-pill neo-border neo-shadow transition-transform focus-within:-translate-y-1">
+      <div ref={inputWrapperRef} className="flex items-center gap-2 md:gap-4 bg-white p-2 md:p-4 neo-pill neo-border neo-shadow transition-transform focus-within:-translate-y-1">
         <input
           ref={inputRef}
           className="flex-1 bg-transparent py-1 md:py-2 px-2 md:px-4 text-base md:text-xl font-bold placeholder:text-gray-400 outline-none"
@@ -163,9 +208,12 @@ export default function AddressInput({
         )}
       </div>
 
-      {/* 下拉推荐列表 */}
-      {isOpen && tips.length > 0 && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 md:bottom-auto md:top-full md:mb-0 md:mt-2 bg-white neo-border neo-shadow z-[100] max-h-[40vh] md:max-h-60 overflow-y-auto">
+      {/* 下拉推荐列表 - 使用 Portal 渲染到 body 避免被 overflow 裁剪 */}
+      {isOpen && tips.length > 0 && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="bg-white neo-border neo-shadow z-[9999] overflow-y-auto"
+          style={dropdownStyle}
+        >
           {tips.map((tip, index) => (
             <button
               key={`tip-${index}-${tip.id || tip.name}`}
@@ -184,7 +232,8 @@ export default function AddressInput({
               </div>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
