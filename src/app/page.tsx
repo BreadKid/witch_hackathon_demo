@@ -125,16 +125,25 @@ export default function Home() {
     if (!keywords || keywords.trim().length < 2) {
       setPrimaryTips([]);
       setPrimaryTipsOpen(false);
+      setPrimarySearching(false); // 确保清空输入时重置 loading 状态
       return;
     }
 
     setPrimarySearching(true);
 
     primaryDebounceRef.current = setTimeout(async () => {
-      const results = await fetchAddressTips(keywords);
-      setPrimaryTips(results);
-      setPrimaryTipsOpen(results.length > 0);
-      setPrimarySearching(false);
+      try {
+        const results = await fetchAddressTips(keywords);
+        setPrimaryTips(results);
+        setPrimaryTipsOpen(results.length > 0);
+      } catch (error) {
+        console.error("地址搜索失败:", error);
+        setPrimaryTips([]);
+        setPrimaryTipsOpen(false);
+      } finally {
+        // 确保无论成功还是失败都会重置 loading 状态
+        setPrimarySearching(false);
+      }
     }, 300);
   }, []);
 
@@ -162,16 +171,17 @@ export default function Home() {
   // 点击/触摸外部关闭第一个输入框的建议列表（移动端兼容）
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      // 使用 setTimeout 延迟执行，确保不会在 setPrimaryTipsOpen(true) 之前关闭
-      // 这对移动端尤其重要，因为触摸事件的顺序可能导致意外关闭
-      setTimeout(() => {
-        if (primaryInputContainerRef.current && !primaryInputContainerRef.current.contains(e.target as Node)) {
+      // 在 requestAnimationFrame 之前捕获 target，避免事件对象被回收后引用失效
+      const target = e.target as Node;
+      // 使用 requestAnimationFrame 确保在 DOM 更新后检查
+      requestAnimationFrame(() => {
+        if (primaryInputContainerRef.current && !primaryInputContainerRef.current.contains(target)) {
           setPrimaryTipsOpen(false);
         }
-      }, 10);
+      });
     };
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);

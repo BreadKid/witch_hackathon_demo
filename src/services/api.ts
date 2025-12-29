@@ -46,6 +46,10 @@ export const fetchAddressTips = async (keywords: string, city?: string): Promise
     return [];
   }
 
+  // 创建 AbortController 用于请求超时控制
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超时
+
   try {
     let url = `/api/proxy/inputtips?keywords=${encodeURIComponent(keywords.trim())}`;
     
@@ -54,7 +58,11 @@ export const fetchAddressTips = async (keywords: string, city?: string): Promise
       url += `&city=${encodeURIComponent(city.trim())}`;
     }
     
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       console.error("地址提示请求失败:", res.status);
@@ -69,7 +77,12 @@ export const fetchAddressTips = async (keywords: string, city?: string): Promise
 
     return [];
   } catch (error: any) {
-    console.error("地址提示请求异常:", error);
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.error("地址提示请求超时");
+    } else {
+      console.error("地址提示请求异常:", error);
+    }
     return [];
   }
 };

@@ -35,18 +35,27 @@ export default function AddressInput({
     if (!keywords || keywords.trim().length < 2) {
       setTips([]);
       setIsOpen(false);
+      setIsLoading(false); // 确保清空输入时重置 loading 状态
       return;
     }
 
     setIsLoading(true);
 
     debounceTimer.current = setTimeout(async () => {
-      // 传入 preferredCity 以优先推荐同区域地址
-      const results = await fetchAddressTips(keywords, preferredCity);
-      setTips(results);
-      setIsOpen(results.length > 0);
-      setIsLoading(false);
-      setHighlightIndex(-1);
+      try {
+        // 传入 preferredCity 以优先推荐同区域地址
+        const results = await fetchAddressTips(keywords, preferredCity);
+        setTips(results);
+        setIsOpen(results.length > 0);
+      } catch (error) {
+        console.error("地址搜索失败:", error);
+        setTips([]);
+        setIsOpen(false);
+      } finally {
+        // 确保无论成功还是失败都会重置 loading 状态
+        setIsLoading(false);
+        setHighlightIndex(-1);
+      }
     }, 300);
   }, [preferredCity]);
 
@@ -97,17 +106,18 @@ export default function AddressInput({
   // 点击/触摸外部关闭（移动端兼容）
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      // 使用 setTimeout 延迟执行，确保不会在 setIsOpen(true) 之前关闭
-      // 这对移动端尤其重要，因为触摸事件的顺序可能导致意外关闭
-      setTimeout(() => {
-        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      // 在 setTimeout 之前捕获 target，避免事件对象被回收后引用失效
+      const target = e.target as Node;
+      // 使用 requestAnimationFrame 确保在 DOM 更新后检查
+      requestAnimationFrame(() => {
+        if (containerRef.current && !containerRef.current.contains(target)) {
           setIsOpen(false);
         }
-      }, 10);
+      });
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
