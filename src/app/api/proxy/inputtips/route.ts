@@ -85,16 +85,24 @@ export async function GET(request: NextRequest) {
 
     // 格式化返回数据
     const tips = (data.tips || [])
-      .filter((tip: any) => tip.id && tip.name)
-      .map((tip: any) => {
+      // 高德部分返回没有 id 的区县/道路，仍需展示
+      .filter((tip: any) => tip && tip.name && tip.name.trim() !== "")
+      .map((tip: any, index: number) => {
         const district = tip.district || "";
+        const derivedCity = extractCityFromDistrict(district);
+        const fallbackId =
+          tip.id ||
+          tip.adcode ||
+          tip.location ||
+          `${tip.name}-${index}`;
+
         return {
-          id: tip.id,
+          id: fallbackId,
           name: tip.name,
-          district: district,
+          district,
           address: tip.address || district || "",
-          // 提取城市名，用于后续的区域优先推荐
-          city: extractCityFromDistrict(district),
+          // 优先使用返回的城市字段，其次用区县推断
+          city: tip.city || derivedCity,
         };
       });
 
