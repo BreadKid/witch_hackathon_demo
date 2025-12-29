@@ -54,14 +54,18 @@ export default function Home() {
   const updatePrimaryDropdownPosition = useCallback(() => {
     if (!primaryInputWrapperRef.current) return;
     const rect = primaryInputWrapperRef.current.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const viewportHeight = viewport?.height ?? window.innerHeight;
+    const viewportOffsetTop = viewport?.offsetTop ?? 0;
+    const viewportOffsetLeft = viewport?.offsetLeft ?? 0;
     const isMobileView = window.innerWidth < 768;
     
     if (isMobileView) {
       // 移动端：向上弹出
       setPrimaryDropdownStyle({
         position: 'fixed',
-        bottom: window.innerHeight - rect.top + 8,
-        left: rect.left,
+        bottom: viewportHeight + viewportOffsetTop - rect.top + 8,
+        left: rect.left + viewportOffsetLeft,
         width: rect.width,
         maxHeight: '40vh',
       });
@@ -69,8 +73,8 @@ export default function Home() {
       // 桌面端：向下弹出
       setPrimaryDropdownStyle({
         position: 'fixed',
-        top: rect.bottom + 8,
-        left: rect.left,
+        top: rect.bottom + 8 + viewportOffsetTop,
+        left: rect.left + viewportOffsetLeft,
         width: rect.width,
         maxHeight: 240,
       });
@@ -234,9 +238,13 @@ export default function Home() {
       const handleUpdate = () => updatePrimaryDropdownPosition();
       window.addEventListener('scroll', handleUpdate, true);
       window.addEventListener('resize', handleUpdate);
+      window.visualViewport?.addEventListener('resize', handleUpdate);
+      window.visualViewport?.addEventListener('scroll', handleUpdate);
       return () => {
         window.removeEventListener('scroll', handleUpdate, true);
         window.removeEventListener('resize', handleUpdate);
+        window.visualViewport?.removeEventListener('resize', handleUpdate);
+        window.visualViewport?.removeEventListener('scroll', handleUpdate);
       };
     }
   }, [primaryTipsOpen, primaryTips.length, updatePrimaryDropdownPosition]);

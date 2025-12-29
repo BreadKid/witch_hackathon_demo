@@ -33,14 +33,18 @@ export default function AddressInput({
   const updateDropdownPosition = useCallback(() => {
     if (!inputWrapperRef.current) return;
     const rect = inputWrapperRef.current.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const viewportHeight = viewport?.height ?? window.innerHeight;
+    const viewportOffsetTop = viewport?.offsetTop ?? 0;
+    const viewportOffsetLeft = viewport?.offsetLeft ?? 0;
     const isMobile = window.innerWidth < 768;
     
     if (isMobile) {
       // 移动端：向上弹出
       setDropdownStyle({
         position: 'fixed',
-        bottom: window.innerHeight - rect.top + 8,
-        left: rect.left,
+        bottom: viewportHeight + viewportOffsetTop - rect.top + 8,
+        left: rect.left + viewportOffsetLeft,
         width: rect.width,
         maxHeight: '40vh',
       });
@@ -48,8 +52,8 @@ export default function AddressInput({
       // 桌面端：向下弹出
       setDropdownStyle({
         position: 'fixed',
-        top: rect.bottom + 8,
-        left: rect.left,
+        top: rect.bottom + 8 + viewportOffsetTop,
+        left: rect.left + viewportOffsetLeft,
         width: rect.width,
         maxHeight: 240,
       });
@@ -171,9 +175,13 @@ export default function AddressInput({
       const handleUpdate = () => updateDropdownPosition();
       window.addEventListener('scroll', handleUpdate, true);
       window.addEventListener('resize', handleUpdate);
+      window.visualViewport?.addEventListener('resize', handleUpdate);
+      window.visualViewport?.addEventListener('scroll', handleUpdate);
       return () => {
         window.removeEventListener('scroll', handleUpdate, true);
         window.removeEventListener('resize', handleUpdate);
+        window.visualViewport?.removeEventListener('resize', handleUpdate);
+        window.visualViewport?.removeEventListener('scroll', handleUpdate);
       };
     }
   }, [isOpen, tips.length, updateDropdownPosition]);
