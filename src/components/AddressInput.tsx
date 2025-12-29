@@ -94,16 +94,24 @@ export default function AddressInput({
     }
   };
 
-  // 点击外部关闭
+  // 点击/触摸外部关闭（移动端兼容）
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      // 使用 setTimeout 延迟执行，确保不会在 setIsOpen(true) 之前关闭
+      // 这对移动端尤其重要，因为触摸事件的顺序可能导致意外关闭
+      setTimeout(() => {
+        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+          setIsOpen(false);
+        }
+      }, 10);
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   // 清理定时器
