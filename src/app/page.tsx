@@ -416,7 +416,7 @@ export default function Home() {
                     
                     {/* 第一个输入框的地址建议下拉列表 */}
                     {primaryTipsOpen && primaryTips.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white neo-border neo-shadow z-50 max-h-60 overflow-y-auto">
+                      <div className="absolute bottom-full left-0 right-0 mb-2 md:bottom-auto md:top-full md:mb-0 md:mt-2 bg-white neo-border neo-shadow z-[100] max-h-[40vh] md:max-h-60 overflow-y-auto">
                         {primaryTips.map((tip, tipIndex) => (
                           <button
                             key={`primary-tip-${tipIndex}-${tip.id || tip.name}`}
