@@ -6,6 +6,8 @@ export const getCurrentLocation = async (): Promise<{
   latitude: number;
   longitude: number;
   address: string;
+  city?: string;     // 城市名称，用于高德 inputtips API 的 city 参数
+  district?: string; // 区/县名称，用于显示
 }> => {
   // 动态导入，避免 SSR 时报 window is not defined
   const { load } = await import("@amap/amap-jsapi-loader");
@@ -61,14 +63,29 @@ export const getCurrentLocation = async (): Promise<{
             console.log("🗺️ 逆地理编码结果:", { geoStatus, geoResult });
             
             let finalAddress = "";
+            let city = "";
+            let district = "";
             
             if (geoStatus === 'complete' && geoResult.regeocode) {
               // Geocoder 成功返回地址
               finalAddress = geoResult.regeocode.formattedAddress;
-              console.log("✅ 逆地理编码成功:", finalAddress);
+              // 提取区域信息
+              const addressComponent = geoResult.regeocode.addressComponent;
+              if (addressComponent) {
+                // city 用于高德 inputtips API（需要城市级别）
+                city = addressComponent.city || addressComponent.province || "";
+                // district 用于显示（区/县级别）
+                district = addressComponent.district || addressComponent.city || "";
+              }
+              console.log("✅ 逆地理编码成功:", finalAddress, "城市:", city, "区域:", district);
             } else if (directAddress && directAddress.trim() !== "") {
               // Geocoder 失败但定位时有返回地址
               finalAddress = directAddress;
+              // 尝试从定位结果中提取区域
+              if (result.addressComponent) {
+                city = result.addressComponent.city || result.addressComponent.province || "";
+                district = result.addressComponent.district || result.addressComponent.city || "";
+              }
               console.log("⚠️ 使用定位直接返回的地址:", finalAddress);
             } else {
               // 都失败了，使用经纬度作为 fallback
@@ -80,6 +97,8 @@ export const getCurrentLocation = async (): Promise<{
               latitude: lat,
               longitude: lng,
               address: finalAddress,
+              city: city,
+              district: district,
             });
           });
 

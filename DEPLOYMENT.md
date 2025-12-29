@@ -145,11 +145,26 @@ vercel --prod
 - ✅ API 代理配置（通过 `next.config.ts` 中的 rewrites）
 - ✅ 环境变量支持（`BACKEND_URL`）
 
+## 高德地图 API 配置
+
+⚠️ **重要**：高德地图需要配置两种类型的 API Key
+
+| 环境变量 | Key 类型 | 用途 |
+|---------|---------|-----|
+| `NEXT_PUBLIC_AMAP_KEY` | Web 端 (JS API) | 前端浏览器地图显示、地理编码 |
+| `AMAP_SERVER_KEY` | Web 服务 | 服务端代理请求（如地址输入提示） |
+
+在高德开放平台 (https://console.amap.com/) 创建应用时：
+1. 添加 **Web 端 (JS API 安全密钥版)** 类型的 Key → 配置为 `NEXT_PUBLIC_AMAP_KEY`
+2. 添加 **Web 服务** 类型的 Key → 配置为 `AMAP_SERVER_KEY`
+
+若只配置一个 Key 或类型不匹配，会报 `USERKEY_PLAT_NOMATCH` 错误。
+
 ## 注意事项
 
 1. **后端地址**：确保 `BACKEND_URL` 环境变量指向可访问的后端服务
 2. **CORS**：如果后端在不同域名，确保后端配置了正确的 CORS 策略
-3. **API 密钥**：如果使用高德地图等第三方服务，记得在环境变量中添加 API 密钥
+3. **高德 API 密钥**：需配置两种类型的 Key（见上方说明）
 4. **构建时间**：免费版 Vercel 账户有构建时间限制，注意优化构建速度
 
 ## 参考链接

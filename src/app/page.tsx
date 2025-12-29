@@ -1,10 +1,11 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { getCurrentLocation } from "../utils/amapHelper";
-import { fetchMeetingPoint } from "../services/api";
-import { SearchResponse } from "../types";
+import { fetchMeetingPoint, fetchAddressTips } from "../services/api";
+import { SearchResponse, AddressTip } from "../types";
 import LoadingOverlay from "../components/LoadingOverlay";
+import AddressInput from "../components/AddressInput";
 
 const MapView = dynamic(
   () => import("../components/MapView").then((mod) => mod.default),
@@ -36,6 +37,15 @@ export default function Home() {
   const [compareMode, setCompareMode] = useState(false);
   const [displayCompareMode, setDisplayCompareMode] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  // 存储"朋友1/我"的城市信息，用于其他输入框的地址推荐优先级
+  const [primaryCity, setPrimaryCity] = useState<string>("");
+  
+  // 第一个输入框的地址建议状态
+  const [primaryTips, setPrimaryTips] = useState<AddressTip[]>([]);
+  const [primaryTipsOpen, setPrimaryTipsOpen] = useState(false);
+  const [primarySearching, setPrimarySearching] = useState(false);
+  const primaryDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const primaryInputContainerRef = useRef<HTMLDivElement>(null);
 
   // Mobile Bottom Sheet Dragging State
   const [panelHeight, setPanelHeight] = useState(60);
@@ -95,11 +105,79 @@ export default function Home() {
     return `好朋友#${index + 1}`;
   };
 
-  const handleInputChange = (index: number, value: string) => {
+  const handleInputChange = (index: number, value: string, city?: string) => {
     const newInputs = [...inputs];
     newInputs[index] = value;
     setInputs(newInputs);
+    
+    // 如果是第一个输入框且有城市信息，更新 primaryCity
+    if (index === 0 && city) {
+      setPrimaryCity(city);
+    }
   };
+
+  // 第一个输入框的地址搜索（防抖）
+  const handlePrimaryInputSearch = useCallback((keywords: string) => {
+    if (primaryDebounceRef.current) {
+      clearTimeout(primaryDebounceRef.current);
+    }
+
+    if (!keywords || keywords.trim().length < 2) {
+      setPrimaryTips([]);
+      setPrimaryTipsOpen(false);
+      return;
+    }
+
+    setPrimarySearching(true);
+
+    primaryDebounceRef.current = setTimeout(async () => {
+      const results = await fetchAddressTips(keywords);
+      setPrimaryTips(results);
+      setPrimaryTipsOpen(results.length > 0);
+      setPrimarySearching(false);
+    }, 300);
+  }, []);
+
+  // 选择第一个输入框的地址建议
+  const handleSelectPrimaryTip = (tip: AddressTip) => {
+    const fullAddress = tip.address 
+      ? `${tip.district}${tip.name}` 
+      : tip.name;
+    handleInputChange(0, fullAddress);
+    // 同时更新城市信息
+    if (tip.city) {
+      setPrimaryCity(tip.city);
+    }
+    setPrimaryTipsOpen(false);
+    setPrimaryTips([]);
+  };
+
+  // 第一个输入框输入变化
+  const handlePrimaryInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    handleInputChange(0, newValue);
+    handlePrimaryInputSearch(newValue);
+  };
+
+  // 点击外部关闭第一个输入框的建议列表
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (primaryInputContainerRef.current && !primaryInputContainerRef.current.contains(e.target as Node)) {
+        setPrimaryTipsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 清理防抖定时器
+  useEffect(() => {
+    return () => {
+      if (primaryDebounceRef.current) {
+        clearTimeout(primaryDebounceRef.current);
+      }
+    };
+  }, []);
 
   const handleAddUser = () => {
     if (inputs.length >= MAX_USERS) {
@@ -123,6 +201,10 @@ export default function Home() {
     try {
       const location = await getCurrentLocation();
       handleInputChange(0, location.address);
+      // 更新城市信息，用于其他输入框的地址推荐
+      if (location.city) {
+        setPrimaryCity(location.city);
+      }
       showToast("定位成功");
     } catch (error: any) {
       showToast(error.message || error, "error");
@@ -280,37 +362,69 @@ export default function Home() {
                 <span className="text-xs md:text-base font-black text-black italic ml-6 uppercase tracking-wider">
                   {getLabel(index)}
                 </span>
-                <div className="flex items-center gap-2 md:gap-4 bg-white p-2 md:p-4 neo-pill neo-border neo-shadow transition-transform group-focus-within:-translate-y-1">
-                  <input
-                    className="flex-1 bg-transparent py-1 md:py-2 px-2 md:px-4 text-base md:text-xl font-bold placeholder:text-gray-400 outline-none"
-                    placeholder={index === 0 ? "点击右侧图标定位" : "输入好友地址"}
-                    value={addr}
-                    onChange={(e) => handleInputChange(index, e.target.value)}
-                  />
-
-                  {index === 0 ? (
-                    <button 
-                      onClick={handleLocate} 
-                      className="w-9 h-9 md:w-12 md:h-12 bg-gray-100 rounded-full neo-border flex items-center justify-center active:scale-90 transition-transform"
-                    >
-                      {isLocating ? (
-                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"/>
+                {index === 0 ? (
+                  <div ref={primaryInputContainerRef} className="relative w-full">
+                    <div className="flex items-center gap-2 md:gap-4 bg-white p-2 md:p-4 neo-pill neo-border neo-shadow transition-transform group-focus-within:-translate-y-1">
+                      <input
+                        className="flex-1 bg-transparent py-1 md:py-2 px-2 md:px-4 text-base md:text-xl font-bold placeholder:text-gray-400 outline-none"
+                        placeholder="输入地址或点击定位"
+                        value={addr}
+                        onChange={handlePrimaryInputChange}
+                        onFocus={() => {
+                          if (primaryTips.length > 0) setPrimaryTipsOpen(true);
+                        }}
+                        autoComplete="off"
+                      />
+                      {primarySearching ? (
+                        <div className="w-9 h-9 md:w-12 md:h-12 flex items-center justify-center">
+                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"/>
+                        </div>
                       ) : (
-                        <svg viewBox="0 0 24 24" className="w-5 h-5 md:w-7 md:h-7" fill="none" stroke="currentColor" strokeWidth="3">
-                          <circle cx="12" cy="12" r="10" />
-                          <path d="M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
-                        </svg>
+                        <button 
+                          onClick={handleLocate} 
+                          className="w-9 h-9 md:w-12 md:h-12 bg-gray-100 rounded-full neo-border flex items-center justify-center active:scale-90 transition-transform"
+                        >
+                          {isLocating ? (
+                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"/>
+                          ) : (
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 md:w-7 md:h-7" fill="none" stroke="currentColor" strokeWidth="3">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+                            </svg>
+                          )}
+                        </button>
                       )}
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleRemoveUser(index)} 
-                      className="w-7 h-7 md:w-10 md:h-10 bg-red-400 rounded-full neo-border flex items-center justify-center text-white font-black active:scale-90 mr-1"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+                    </div>
+                    
+                    {/* 第一个输入框的地址建议下拉列表 */}
+                    {primaryTipsOpen && primaryTips.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white neo-border neo-shadow z-50 max-h-60 overflow-y-auto">
+                        {primaryTips.map((tip, tipIndex) => (
+                          <button
+                            key={`primary-tip-${tipIndex}-${tip.id || tip.name}`}
+                            onClick={() => handleSelectPrimaryTip(tip)}
+                            className="w-full text-left px-4 py-3 border-b-2 border-black last:border-b-0 transition-colors hover:bg-gray-100"
+                          >
+                            <div className="font-bold text-black text-sm md:text-base truncate">
+                              {tip.name}
+                            </div>
+                            <div className="text-xs md:text-sm text-gray-500 truncate">
+                              {tip.district}{tip.address && tip.address !== tip.district ? ` · ${tip.address}` : ""}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <AddressInput
+                    value={addr}
+                    onChange={(value, city) => handleInputChange(index, value, city)}
+                    onRemove={() => handleRemoveUser(index)}
+                    placeholder="输入好友地址"
+                    preferredCity={primaryCity}
+                  />
+                )}
               </div>
             ))}
 

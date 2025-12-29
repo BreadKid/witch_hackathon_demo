@@ -1,5 +1,5 @@
 // src/services/api.ts
-import { SearchRequest, SearchResponse, TimeDetail } from "../types";
+import { SearchRequest, SearchResponse, TimeDetail, AddressTip } from "../types";
 
 export const fetchMeetingPoint = async (payload: SearchRequest): Promise<SearchResponse[]> => {
   try {
@@ -37,6 +37,39 @@ export const fetchMeetingPoint = async (payload: SearchRequest): Promise<SearchR
   } catch (error: any) {
     console.error("API 请求失败:", error);
     alert("请求失败: " + (error.message || "未知错误"));
+    return [];
+  }
+};
+
+export const fetchAddressTips = async (keywords: string, city?: string): Promise<AddressTip[]> => {
+  if (!keywords || keywords.trim() === "") {
+    return [];
+  }
+
+  try {
+    let url = `/api/proxy/inputtips?keywords=${encodeURIComponent(keywords.trim())}`;
+    
+    // 如果提供了城市参数，添加到请求中以优先搜索该区域
+    if (city && city.trim()) {
+      url += `&city=${encodeURIComponent(city.trim())}`;
+    }
+    
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      console.error("地址提示请求失败:", res.status);
+      return [];
+    }
+
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    return [];
+  } catch (error: any) {
+    console.error("地址提示请求异常:", error);
     return [];
   }
 };
