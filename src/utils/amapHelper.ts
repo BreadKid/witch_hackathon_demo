@@ -1,7 +1,6 @@
-// 你的高德 Key (前端 Key)
-const AMAP_KEY = "f0f8997e05bfa2dd95e546383cc44b90";
-// 你的安全密钥 (对应上面的 Key)
-const AMAP_SECURITY_CODE = "71edc06ee1ffec6400bb7d170353a584";
+// 从环境变量读取高德地图配置
+const AMAP_KEY = process.env.NEXT_PUBLIC_AMAP_KEY || "";
+const AMAP_SECURITY_CODE = process.env.NEXT_PUBLIC_AMAP_SECURITY_CODE || "";
 
 export const getCurrentLocation = async (): Promise<{
   latitude: number;
