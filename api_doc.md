@@ -86,7 +86,7 @@ dev：```你猜.zeabur.app```
 #### `curl` 请求样例
 
 ```bash
-curl -X POST "https://424d970d.r16.cpolar.top/stores" \
+curl -X POST "https://你猜.zeabur.app/stores" \
 -H "Content-Type: application/json" \
 -d '{
   "user_locations": [

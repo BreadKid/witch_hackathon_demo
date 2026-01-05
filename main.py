@@ -3,10 +3,15 @@ import json
 import re
 import statistics
 import asyncio
+import time
+from dotenv import load_dotenv
 from openai import OpenAI
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response, status
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 
@@ -304,3 +309,31 @@ async def get_stores(request: StoreRequest):
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
+
+
+
+
+# ---healthy check ---
+async def check_something():
+    # TODO 调用ai是否通
+    return True
+
+@app.get("/health", tags=["Management"])
+async def health_check(response: Response):
+    start_time = time.time()
+    db_healthy = await check_something()
+    
+    # 逻辑判断：如果核心依赖调用失败，返回 503
+    if not db_healthy:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "status": "fail",
+            "reason": "Database connection lost"
+        }
+
+    return {
+        "status": "pass",
+        "timestamp": time.time(),
+        "duration_ms": (time.time() - start_time) * 1000,
+        "environment": "dev"
+    }
