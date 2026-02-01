@@ -134,7 +134,42 @@ async def calculate_center_and_search_node(state: AgentState):
     print(f"      正在搜索周边的 {state['poi_type']}...")
     pois = await amap.search_nearby(avg_lon, avg_lat, state['poi_type'])
     print(f"      发现 {len(pois)} 个候选地点")
-    return {"candidates": pois}
+    
+    # 地点去重
+    def is_duplicate(poi1, poi2):
+        """判断两个地点是否重复"""
+        # 1. 坐标去重：小数点后4位一致
+        loc1 = poi1['location'].split(',')
+        loc2 = poi2['location'].split(',')
+        lon1, lat1 = round(float(loc1[0]), 4), round(float(loc1[1]), 4)
+        lon2, lat2 = round(float(loc2[0]), 4), round(float(loc2[1]), 4)
+        if lon1 == lon2 and lat1 == lat2:
+            return True
+        
+        # 2. 地址相似度去重
+        addr1 = poi1.get('address', '')
+        addr2 = poi2.get('address', '')
+        if addr1 and addr2:
+            # 提取核心地址（去除建筑物名称等后缀）
+            # 如果一个地址是另一个的子串，认为相似
+            if addr1 in addr2 or addr2 in addr1:
+                return True
+        
+        return False
+    
+    # 执行去重
+    unique_pois = []
+    for poi in pois:
+        is_dup = False
+        for existing in unique_pois:
+            if is_duplicate(poi, existing):
+                is_dup = True
+                break
+        if not is_dup:
+            unique_pois.append(poi)
+    
+    print(f"      去重后剩余 {len(unique_pois)} 个候选地点")
+    return {"candidates": unique_pois}
 
 async def evaluate_compromise_node(state: AgentState):
     """节点3：计算真实路况耗时并进行“折中”评估"""
