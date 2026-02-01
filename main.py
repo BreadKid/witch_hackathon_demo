@@ -251,13 +251,14 @@ async def format_output_node(state: AgentState):
         store_resp = item['info']
         time_details = []
         for t_item in item['raw_times']:
-            # 转换格式 mm.ss
-            duration_fmt = f"{t_item.duration // 60}.{t_item.duration % 60:02d}"
+            # 转换格式：四舍五入到分钟
+            duration_minutes = round(t_item.duration / 60)
+            duration_fmt = f"{duration_minutes}"
             # 判定 tag
             is_min = (t_item.duration == min_durations[t_item.origin])
             time_details.append(TimeDetail(
                 location=t_item.origin,
-                duration=f"大约{duration_fmt}分钟",
+                duration=f"{duration_fmt}分钟",
                 tag=is_min
             ))
         store_resp.time = time_details
