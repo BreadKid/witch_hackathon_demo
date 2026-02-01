@@ -1,17 +1,13 @@
 import os
 import asyncio
 import statistics
-from typing import Annotated, TypedDict, List, Dict
+from typing import TypedDict, List, Dict
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import httpx
 import json
 import time as time_module
-from fastapi import FastAPI, HTTPException, Response, status
-
-# Google & LangGraph 核心库
-from google import genai
-from google.genai import types
+from fastapi import FastAPI, HTTPException
 from langgraph.graph import StateGraph, END
 
 load_dotenv()
@@ -110,8 +106,6 @@ class AgentState(TypedDict):
 # --- 4. Agent 节点逻辑 ---
 
 amap = AmapService()
-# 修复：从 .env 中读取正确的环境变量 GEMINI_API_KEY
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 async def geocode_node(state: AgentState):
     """节点1：解析地址并获取坐标"""
