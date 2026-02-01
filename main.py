@@ -290,10 +290,11 @@ app = FastAPI()
 @app.post("/stores", response_model=List[StoreResponse])
 async def get_stores(request: StoreRequest):
     try:
+        num_needed = request.num if request.num > 0 else 3
         inputs = {
             "user_request": f"寻找驾驶时间最折中的地点",
             "poi_type": request.preference_type,
-            "num_needed": request.num,
+            "num_needed": num_needed,
             "origin_addresses": request.user_locations
         }
         
