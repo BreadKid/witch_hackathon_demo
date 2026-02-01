@@ -5,6 +5,9 @@ from typing import Annotated, TypedDict, List, Dict
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import httpx
+import json
+import time as time_module
+from fastapi import FastAPI, HTTPException, Response, status
 
 # Google & LangGraph 核心库
 from google import genai
@@ -15,19 +18,29 @@ load_dotenv()
 
 # --- 1. 定义数据结构 (Pydantic) ---
 
+class TimeDetail(BaseModel):
+    location: str
+    duration: str
+    tag: bool
+
+class StoreResponse(BaseModel):
+    store: str
+    lat: float
+    long: float
+    address: str
+    time: List[TimeDetail]
+
+class StoreRequest(BaseModel):
+    user_locations: List[str]
+    preference_type: str
+    num: int = Field(1, ge=0, le=10)
+
 class TimeItem(BaseModel):
     origin: str = Field(description="起点地址名称")
     duration: int = Field(description="耗时(秒)")
 
-class StoreInfo(BaseModel):
-    store: str = Field(description="推荐地点的名称")
-    lat: float = Field(description="纬度，小数点后6位")
-    long: float = Field(description="经度，小数点后6位")
-    address: str = Field(description="精确地址")
-    time: List[TimeItem] = Field(description="起点到该点的驾车耗时列表")
-
 class FinalResponse(BaseModel):
-    stores: List[StoreInfo]
+    stores: List[StoreResponse]
 
 # --- 2. 高德地图工具集 (Amap Tools) ---
 
@@ -91,8 +104,8 @@ class AgentState(TypedDict):
     origin_addresses: List[str]
     origin_coords: List[dict]
     candidates: List[dict]
-    analysis_results: List[StoreInfo]
-    final_json: dict
+    analysis_results: List[dict]
+    final_json: List[dict]
 
 # --- 4. Agent 节点逻辑 ---
 
@@ -155,46 +168,59 @@ async def evaluate_compromise_node(state: AgentState):
         loc = poi['location'].split(',')
         scored_candidates.append({
             "score": score,
-            "info": StoreInfo(
+            "info": StoreResponse(
                 store=poi['name'],
                 lat=float(loc[1]),
                 long=float(loc[0]),
                 address=poi['address'] if isinstance(poi['address'], str) else "未知地址",
-                time=time_list
-            )
+                time=[] # 暂存, format 节点再处理
+            ),
+            "raw_times": time_list # 临时保存原始数据供计算
         })
     
     # 按得分排序，选出最均衡的 N 个
     scored_candidates.sort(key=lambda x: x['score'])
-    final_selection = [x['info'] for x in scored_candidates[:state['num_needed']]]
+    final_selection = scored_candidates[:state['num_needed']]
     
     # 打印前 3 个评分最高的（作为日志）
-    for i, item in enumerate(scored_candidates[:3]):
-        tag = "[胜出]" if i == 0 else "[备选]"
-        avg_wait = statistics.mean([t.duration for t in item['info'].time])
-        print(f"  {tag} {item['info'].store}: 得分 {item['score']:.1f}, 平均耗时 {avg_wait/60:.1f}min")
+    for i, item in enumerate(final_selection[:3]):
+        tag_log = "[胜出]" if i == 0 else "[备选]"
+        avg_wait = statistics.mean([t.duration for t in item['raw_times']])
+        print(f"  {tag_log} {item['info'].store}: 得分 {item['score']:.1f}, 平均耗时 {avg_wait/60:.1f}min")
 
     return {"analysis_results": final_selection}
 
 async def format_output_node(state: AgentState):
-    """节点4:直接格式化为 JSON 输出"""
+    """节点4:格式化输出并计算 Tag"""
     print(f"\n[4/4] 格式化为 JSON...")
     
-    import json
-    # 将模型转为字典并手动处理 duration 格式
-    stores_data = []
-    for store in state['analysis_results']:
-        s_dict = store.model_dump()
-        for t in s_dict['time']:
-            d = t['duration']
-            # 将秒转换为 mm.ss 字符串格式
-            t['duration'] = f"{d // 60}.{d % 60:02d}"
-        stores_data.append(s_dict)
+    # 1. 找出每个起点在所有候选店中的最小耗时 (用于打 tag)
+    min_durations = {} # {address: min_seconds}
+    for item in state['analysis_results']:
+        for t_item in item['raw_times']:
+            if t_item.origin not in min_durations or t_item.duration < min_durations[t_item.origin]:
+                min_durations[t_item.origin] = t_item.duration
+
+    # 2. 组装最终响应
+    final_stores = []
+    for item in state['analysis_results']:
+        store_resp = item['info']
+        time_details = []
+        for t_item in item['raw_times']:
+            # 转换格式 mm.ss
+            duration_fmt = f"{t_item.duration // 60}.{t_item.duration % 60:02d}"
+            # 判定 tag
+            is_min = (t_item.duration == min_durations[t_item.origin])
+            time_details.append(TimeDetail(
+                location=t_item.origin,
+                duration=f"大约{duration_fmt}分钟",
+                tag=is_min
+            ))
+        store_resp.time = time_details
+        final_stores.append(store_resp)
         
-    # 生成最终 JSON 字符串
-    json_output = json.dumps({"stores": stores_data}, indent=2, ensure_ascii=False)
     print("      JSON 格式化完成")
-    return {"final_json": json_output}
+    return {"final_json": [s.model_dump() for s in final_stores]}
 
 # --- 5. 构建图 (LangGraph) ---
 
@@ -211,27 +237,33 @@ workflow.add_edge("search", "evaluate")
 workflow.add_edge("evaluate", "format")
 workflow.add_edge("format", END)
 
-app = workflow.compile()
+agent = workflow.compile()
 
-# --- 6. 执行入口 ---
+# --- 6. FastAPI 接口实现 ---
 
-async def main():
-    inputs = {
-        "user_request": "寻找驾驶时间最折中的地点",
-        "poi_type": "麦当劳",
-        "num_needed": 3,
-        "origin_addresses": ["虹桥火车站", "复旦大学杨浦校区", "上海市徐汇区虹梅路街道钦江路102号"]
-    }
-    
-    async for event in app.astream(inputs):
-        pass # 日志已经在节点内部打印
-    
-    # 打印最终结果
-    final_state = await app.ainvoke(inputs)
-    print("\n" + "="*50)
-    print("【 最终推荐结果 】")
-    print(final_state['final_json'])
-    print("="*50)
+app = FastAPI()
+
+@app.post("/stores", response_model=List[StoreResponse])
+async def get_stores(request: StoreRequest):
+    try:
+        inputs = {
+            "user_request": f"寻找驾驶时间最折中的地点",
+            "poi_type": request.preference_type,
+            "num_needed": request.num,
+            "origin_addresses": request.user_locations
+        }
+        
+        # 运行 LangGraph 工作流
+        final_state = await agent.ainvoke(inputs)
+        return final_state['final_json']
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health_check():
+    return {"status": "pass", "timestamp": time_module.time()}
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
