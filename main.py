@@ -49,26 +49,33 @@ class AmapService:
         """地理编码：地址转坐标"""
         async with httpx.AsyncClient() as client:
             resp = await client.get(f"{self.base_url}/geocode/geo", params={
-                "key": self.key, "address": address
+                "key": self.key, "address": address,"city":"上海"
             })
             data = resp.json()
             if data['status'] == '1' and data['geocodes']:
                 loc = data['geocodes'][0]['location'].split(',')
                 return {"address": address, "lon": float(loc[0]), "lat": float(loc[1])}
+            else:
+                print(f"      [错误] 地理编码请求失败: {data.get('info')} (infocode: {data.get('infocode')})")
         return None
 
-    async def search_nearby(self, lon: float, lat: float, poi_type: str, count: int = 10):
+    async def search_nearby(self, lon: float, lat: float, poi_type: str, count: int = 10, radius: int = 5000):
         """周边搜索"""
         async with httpx.AsyncClient() as client:
             resp = await client.get(f"{self.base_url}/place/around", params={
                 "key": self.key,
                 "location": f"{lon},{lat}",
                 "keywords": poi_type,
-                "radius": 5000,
+                "radius": radius,
                 "offset": count,
                 "page": 1
             })
-            return resp.json().get('pois', [])
+            data = resp.json()
+            if data['status'] == '1':
+                return data.get('pois', [])
+            else:
+                print(f"      [错误] 周边搜索请求失败: {data.get('info')} (infocode: {data.get('infocode')})")
+                return []
 
     async def get_distance_matrix(self, origins: List[str], destinations: List[str]):
         """距离矩阵：多对多计算驾驶时间"""
@@ -87,7 +94,7 @@ class AmapService:
                     all_results.extend(data.get('results', []))
                 else:
                     # 如果某次请求失败，填充空数据以保持索引对齐
-                    print(f"      [警告] 距离计算请求失败: {data.get('info')}")
+                    print(f"      [错误] 距离计算请求失败: {data.get('info')} (infocode: {data.get('infocode')})")
                     all_results.extend([{'duration': '999999'}] * len(origins))
         return all_results
 
@@ -125,8 +132,16 @@ async def calculate_center_and_search_node(state: AgentState):
     avg_lat = sum(lats) / len(lats)
     print(f"\n[2/4] 计算几何中心点: ({avg_lon:.6f}, {avg_lat:.6f})")
     
-    print(f"      正在搜索周边的 {state['poi_type']}...")
-    pois = await amap.search_nearby(avg_lon, avg_lat, state['poi_type'])
+    radius = 5000
+    pois = []
+    while radius <= 20000: # 最大尝试到 20km
+        print(f"      正在搜索周边的 {state['poi_type']} (半径: {radius}m)...")
+        pois = await amap.search_nearby(avg_lon, avg_lat, state['poi_type'], radius=radius)
+        if pois:
+            break
+        print(f"      [提示] 半径 {radius}m 内未发现地点，正在成倍扩大搜索范围...")
+        radius *= 2
+
     print(f"      发现 {len(pois)} 个候选地点")
     
     # 地点去重
