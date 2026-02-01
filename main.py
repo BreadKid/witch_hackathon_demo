@@ -29,7 +29,7 @@ class StoreResponse(BaseModel):
 class StoreRequest(BaseModel):
     user_locations: List[str]
     preference_type: str
-    num: int = Field(1, ge=0, le=10)
+    num: int = Field(3, ge=0, le=10)
 
 class TimeItem(BaseModel):
     origin: str = Field(description="起点地址名称")
