@@ -1,339 +1,237 @@
 import os
-import json
-import re
-import statistics
 import asyncio
-import time
-from dotenv import load_dotenv
-from openai import OpenAI
-from fastapi import FastAPI, HTTPException, Response, status
+import statistics
+from typing import Annotated, TypedDict, List, Dict
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from dotenv import load_dotenv
+import httpx
 
-# Load environment variables from .env file
+# Google & LangGraph 核心库
+from google import genai
+from google.genai import types
+from langgraph.graph import StateGraph, END
+
 load_dotenv()
 
-app = FastAPI()
+# --- 1. 定义数据结构 (Pydantic) ---
 
-# --- Pydantic Models ---
+class TimeItem(BaseModel):
+    origin: str = Field(description="起点地址名称")
+    duration: int = Field(description="耗时(秒)")
 
-# This model is for data validation of the AI's response
-class AIStoreResponse(BaseModel):
-    store: str
-    lat: float
-    long: float
-    address: str
-    time: Dict[str, str]
+class StoreInfo(BaseModel):
+    store: str = Field(description="推荐地点的名称")
+    lat: float = Field(description="纬度，小数点后6位")
+    long: float = Field(description="经度，小数点后6位")
+    address: str = Field(description="精确地址")
+    time: List[TimeItem] = Field(description="起点到该点的驾车耗时列表")
 
-# These models define the final API response structure
-class TimeDetail(BaseModel):
-    location: str
-    duration: str
-    tag: bool
+class FinalResponse(BaseModel):
+    stores: List[StoreInfo]
 
-class StoreResponse(BaseModel):
-    store: str
-    lat: float
-    long: float
-    address: str
-    time: List[TimeDetail]
+# --- 2. 高德地图工具集 (Amap Tools) ---
 
-# This model defines the request body
-class StoreRequest(BaseModel):
-    user_locations: List[str]
-    preference_type: str
-    num: int = Field(1, ge=0, le=10)
+class AmapService:
+    def __init__(self):
+        self.key = os.getenv("AMAP_API_KEY")
+        self.base_url = "https://restapi.amap.com/v3"
 
-# --- DeepSeek API Client ---
-client = OpenAI(
-    api_key=os.environ.get('DEEPSEEK_API_KEY'),
-    base_url="https://api.deepseek.com"
-)
+    async def get_coords(self, address: str) -> dict:
+        """地理编码：地址转坐标"""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{self.base_url}/geocode/geo", params={
+                "key": self.key, "address": address
+            })
+            data = resp.json()
+            if data['status'] == '1' and data['geocodes']:
+                loc = data['geocodes'][0]['location'].split(',')
+                return {"address": address, "lon": float(loc[0]), "lat": float(loc[1])}
+        return None
 
-# --- Helper Function ---
-def parse_duration(duration_str: str) -> int:
-    """Extracts the integer part of a duration string like '大约14分钟'."""
-    numbers = re.findall(r'\d+', duration_str)
-    return int(numbers[0]) if numbers else float('inf')
+    async def search_nearby(self, lon: float, lat: float, poi_type: str, count: int = 10):
+        """周边搜索"""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{self.base_url}/place/around", params={
+                "key": self.key,
+                "location": f"{lon},{lat}",
+                "keywords": poi_type,
+                "radius": 5000,
+                "offset": count,
+                "page": 1
+            })
+            return resp.json().get('pois', [])
 
-# --- API Endpoint ---
-@app.post("/stores", response_model=List[StoreResponse])
-async def get_stores(request: StoreRequest):
-    try:
-        if not client.api_key:
-            raise HTTPException(status_code=500, detail="DEEPSEEK_API_KEY environment variable not set.")
-
-        # Mock data for specific request
-        if (
-            "真如" in request.user_locations and
-            "五角场" in request.user_locations and
-            any("上海市徐汇区虹梅路街道" in loc for loc in request.user_locations) and
-            request.preference_type == "公园"
-        ):
-            await asyncio.sleep(1) # Simulate network delay
-
-            mock_response_data = [
-                {
-                    "store": "长风公园",
-                    "lat": 31.226389,
-                    "long": 121.3975,
-                    "address": "上海市普陀区大渡河路189号",
-                    "time": [
-                        {
-                            "location": "上海市徐汇区虹梅路街道钦江路102号",
-                            "duration": "大约25分钟",
-                            "tag": True
-                        },
-                        {
-                            "location": "真如",
-                            "duration": "大约15分钟",
-                            "tag": True
-                        },
-                        {
-                            "location": "五角场",
-                            "duration": "大约35分钟",
-                            "tag": True
-                        }
-                    ]
-                },
-                {
-                    "store": "中山公园",
-                    "lat": 31.22,
-                    "long": 121.416944,
-                    "address": "上海市长宁区长宁路780号",
-                    "time": [
-                        {
-                            "location": "上海市徐汇区虹梅路街道钦江路102号",
-                            "duration": "大约30分钟",
-                            "tag": False
-                        },
-                        {
-                            "location": "真如",
-                            "duration": "大约20分钟",
-                            "tag": False
-                        },
-                        {
-                            "location": "五角场",
-                            "duration": "大约40分钟",
-                            "tag": False
-                        }
-                    ]
-                },
-                {
-                    "store": "静安公园",
-                    "lat": 31.223015,
-                    "long": 121.447448,
-                    "address": "上海市静安区南京西路1649号",
-                    "time": [
-                        {
-                            "location": "上海市徐汇区虹梅路街道钦江路102号",
-                            "duration": "大约35分钟",
-                            "tag": False
-                        },
-                        {
-                            "location": "真如",
-                            "duration": "大约25分钟",
-                            "tag": False
-                        },
-                        {
-                            "location": "五角场",
-                            "duration": "大约45分钟",
-                            "tag": False
-                        }
-                    ]
-                }
-            ]
-            # Validate mock data against the StoreResponse model
-            # New logic: if num is 1, return only the first item
-            if request.num == 1:
-                return [StoreResponse.model_validate(mock_response_data[0])]
-            else:
-                return [StoreResponse.model_validate(item) for item in mock_response_data]
-
-        # Modify request.num based on user's new logic
-        if request.num != 1:
-            request.num = 3
-
-        user_locations_str = ", ".join(request.user_locations)
-        
-        example_time_keys = ""
-        if request.user_locations:
-            for i, loc in enumerate(request.user_locations[:2]):
-                example_time_keys += f'                "{loc}": "大约X分钟"{"", ",\n"[i == 0 and len(request.user_locations) > 1 or i == 0 and len(request.user_locations) == 1]}\n' if i == 0 else f'                "{loc}": "大约Y分钟"\n'
-            if len(request.user_locations) > 2:
-                example_time_keys += "                // ... and more\n"
-        else:
-            example_time_keys = '                "起始地点": "大约X分钟"\n'
-
-        prompt = f"""
-        请使用高德地图的数据，为以下几个用户地点："{user_locations_str}"，寻找 {request.num} 个驾驶时间最折中的 "{request.preference_type}"。
-        请提供这些推荐地点的名称 (store)，精确的门牌号地址 (address)，对应门牌号精确的经度 (long) 和纬度 (lat)，值具体到小数点后6位，使用GCJ02座标系。
-        同时，计算并提供从 "{user_locations_str}" 中的每一个地点到达这些推荐地点所需的驾驶时间。
-        你的响应必须是一个JSON对象，其中包含一个名为 "stores" 的键，该键的值是一个包含 {request.num} 个推荐地点信息的数组。
-        每个地点的信息必须遵循以下精确的JSON格式（time字段的key为地点，value为耗时）:
-        ```json
-        {{
-          "stores": [
-            {{
-              "store": "推荐的麦当劳名称",
-              "lat": 39.908823,
-              "long": 116.397470,
-              "address": "推荐的麦当劳地址",
-              "time": {{
-{example_time_keys}
-              }}
-            }}
-          ]
-        }}
-        ```
-        请确保只返回JSON，不包含任何额外的文本或解释。
-        """
-
-        ai_response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[
-                {"role": "system", "content": "你是一个路线规划师，只返回JSON。"},
-                {"role": "user", "content": prompt},
-            ],
-            stream=False
-        )
-
-        response_content = ai_response.choices[0].message.content
-        
-        if response_content.strip().startswith("```json"):
-            response_content = response_content.strip()[7:-4].strip()
-
-        full_json_response = json.loads(response_content)
-        
-        if "stores" not in full_json_response or not isinstance(full_json_response["stores"], list):
-            raise ValueError("API response missing 'stores' key or 'stores' is not a list.")
-
-        ai_stores_data = full_json_response["stores"]
-        
-        # Validate the data from AI
-        validated_ai_data = [AIStoreResponse.model_validate(item) for item in ai_stores_data]
-
-        final_response = []
-        # If only one or no store is recommended, no comparison is needed, default tag to false.
-        if len(validated_ai_data) <= 1:
-            for store_data in validated_ai_data:
-                time_list = [
-                    TimeDetail(location=loc, duration=dur, tag=False)
-                    for loc, dur in store_data.time.items()
-                ]
-                final_store = StoreResponse(
-                    store=store_data.store,
-                    lat=store_data.lat,
-                    long=store_data.long,
-                    address=store_data.address,
-                    time=time_list
-                )
-                final_response.append(final_store)
-        else:
-            # --- Logic to find the best store based on multi-level priority and move it to the top ---
-            best_store_index = -1
-            min_diff = float('inf')
-            min_max_duration = float('inf')
-
-            for i, store_data in enumerate(validated_ai_data):
-                durations = [parse_duration(d) for d in store_data.time.values()]
-
-                if not durations:
-                    continue
-
-                current_max = max(durations)
-                
-                if len(durations) < 2:
-                    current_diff = 0
+    async def get_distance_matrix(self, origins: List[str], destinations: List[str]):
+        """距离矩阵：多对多计算驾驶时间"""
+        all_results = []
+        async with httpx.AsyncClient() as client:
+            for dest in destinations:
+                await asyncio.sleep(0.3) # 加大延迟，进一步缓解 QPS 限制
+                resp = await client.get(f"{self.base_url}/distance", params={
+                    "key": self.key,
+                    "origins": "|".join(origins),
+                    "destination": dest,
+                    "type": 1 # 驾车
+                })
+                data = resp.json()
+                if data['status'] == '1':
+                    all_results.extend(data.get('results', []))
                 else:
-                    current_diff = current_max - min(durations)
+                    # 如果某次请求失败，填充空数据以保持索引对齐
+                    print(f"      [警告] 距离计算请求失败: {data.get('info')}")
+                    all_results.extend([{'duration': '999999'}] * len(origins))
+        return all_results
 
-                # Priority 1: Check time difference
-                if current_diff < min_diff:
-                    min_diff = current_diff
-                    min_max_duration = current_max
-                    best_store_index = i
-                # Priority 2: Check max duration on tie
-                elif current_diff == min_diff:
-                    if current_max < min_max_duration:
-                        min_max_duration = current_max
-                        best_store_index = i
-                # Priority 3 (original order) is handled implicitly by not updating on a full tie.
+# --- 3. Agent 状态管理 ---
 
-            # If a best store was found and it's not already the first one, move it to the front.
-            if best_store_index > 0:
-                best_store = validated_ai_data.pop(best_store_index)
-                validated_ai_data.insert(0, best_store)
-            
-            # --- New Two-Pass Transformation Logic for comparison ---
+class AgentState(TypedDict):
+    user_request: str
+    poi_type: str
+    num_needed: int
+    origin_addresses: List[str]
+    origin_coords: List[dict]
+    candidates: List[dict]
+    analysis_results: List[StoreInfo]
+    final_json: dict
 
-            # 1. First Pass: Find the minimum duration for each user location across all stores
-            min_durations_per_location: Dict[str, int] = {}
-            for store_data in validated_ai_data:
-                for location, duration_str in store_data.time.items():
-                    duration_val = parse_duration(duration_str)
-                    if location not in min_durations_per_location or duration_val < min_durations_per_location[location]:
-                        min_durations_per_location[location] = duration_val
+# --- 4. Agent 节点逻辑 ---
 
-            # 2. Second Pass: Build the final response with the correct tags
-            for store_data in validated_ai_data:
-                time_list = []
-                for location, duration_str in store_data.time.items():
-                    duration_val = parse_duration(duration_str)
-                    # Check if this duration is the minimum for this location
-                    is_min_for_location = (duration_val == min_durations_per_location.get(location))
-                    
-                    time_list.append(TimeDetail(
-                        location=location,
-                        duration=duration_str,
-                        tag=is_min_for_location
-                    ))
-                
-                # Create the final store object for the response
-                final_store = StoreResponse(
-                    store=store_data.store,
-                    lat=store_data.lat,
-                    long=store_data.long,
-                    address=store_data.address,
-                    time=time_list
-                )
-                final_response.append(final_store)
+amap = AmapService()
+# 修复：从 .env 中读取正确的环境变量 GEMINI_API_KEY
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-        return final_response
+async def geocode_node(state: AgentState):
+    """节点1：解析地址并获取坐标"""
+    print(f"\n[1/4] 正在解析地址坐标...")
+    tasks = [amap.get_coords(addr) for addr in state['origin_addresses']]
+    coords = await asyncio.gather(*tasks)
+    results = [c for c in coords if c]
+    for r in results:
+        print(f"  - {r['address']}: ({r['lon']}, {r['lat']})")
+    return {"origin_coords": results}
 
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Failed to decode JSON from API response. Response was: " + response_content[:200])
-    except ValueError as ve:
-        raise HTTPException(status_code=500, detail=f"Data validation error: {str(ve)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
-
-
-
-
-
-# ---healthy check ---
-async def check_something():
-    # TODO 调用ai是否通
-    return True
-
-@app.get("/health", tags=["Management"])
-async def health_check(response: Response):
-    start_time = time.time()
-    db_healthy = await check_something()
+async def calculate_center_and_search_node(state: AgentState):
+    """节点2：计算几何中心并搜索候选点"""
+    lons = [c['lon'] for c in state['origin_coords']]
+    lats = [c['lat'] for c in state['origin_coords']]
+    avg_lon = sum(lons) / len(lons)
+    avg_lat = sum(lats) / len(lats)
+    print(f"\n[2/4] 计算几何中心点: ({avg_lon:.6f}, {avg_lat:.6f})")
     
-    # 逻辑判断：如果核心依赖调用失败，返回 503
-    if not db_healthy:
-        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        return {
-            "status": "fail",
-            "reason": "Database connection lost"
-        }
+    print(f"      正在搜索周边的 {state['poi_type']}...")
+    pois = await amap.search_nearby(avg_lon, avg_lat, state['poi_type'])
+    print(f"      发现 {len(pois)} 个候选地点")
+    return {"candidates": pois}
 
-    return {
-        "status": "pass",
-        "timestamp": time.time(),
-        "duration_ms": (time.time() - start_time) * 1000,
-        "environment": "dev"
+async def evaluate_compromise_node(state: AgentState):
+    """节点3：计算真实路况耗时并进行“折中”评估"""
+    print(f"\n[3/4] 评估候选地点中 (综合耗时与标准差)...")
+    origins_str = [f"{c['lon']},{c['lat']}" for c in state['origin_coords']]
+    dest_str = [f"{p['location']}" for p in state['candidates']]
+    
+    # 获取距离矩阵数据
+    dist_data = await amap.get_distance_matrix(origins_str, dest_str)
+    
+    # 重组数据进行评分
+    scored_candidates = []
+    num_origins = len(state['origin_coords'])
+    
+    for i, poi in enumerate(state['candidates']):
+        # 提取各起点到该候选点的耗时
+        times = []
+        time_list = []
+        for j in range(num_origins):
+            # 高德返回的 results 索引逻辑：i*num_origins + j
+            idx = i * num_origins + j
+            duration = int(dist_data[idx]['duration'])
+            times.append(duration)
+            time_list.append(TimeItem(origin=state['origin_coords'][j]['address'], duration=duration))
+            
+        # 计算折中指标：平均值 + 标准差（标准差越小越折中）
+        avg_t = statistics.mean(times)
+        std_t = statistics.stdev(times) if len(times) > 1 else 0
+        score = avg_t + (std_t * 1.5) # 权重可调
+        
+        loc = poi['location'].split(',')
+        scored_candidates.append({
+            "score": score,
+            "info": StoreInfo(
+                store=poi['name'],
+                lat=float(loc[1]),
+                long=float(loc[0]),
+                address=poi['address'] if isinstance(poi['address'], str) else "未知地址",
+                time=time_list
+            )
+        })
+    
+    # 按得分排序，选出最均衡的 N 个
+    scored_candidates.sort(key=lambda x: x['score'])
+    final_selection = [x['info'] for x in scored_candidates[:state['num_needed']]]
+    
+    # 打印前 3 个评分最高的（作为日志）
+    for i, item in enumerate(scored_candidates[:3]):
+        tag = "[胜出]" if i == 0 else "[备选]"
+        avg_wait = statistics.mean([t.duration for t in item['info'].time])
+        print(f"  {tag} {item['info'].store}: 得分 {item['score']:.1f}, 平均耗时 {avg_wait/60:.1f}min")
+
+    return {"analysis_results": final_selection}
+
+async def format_output_node(state: AgentState):
+    """节点4:直接格式化为 JSON 输出"""
+    print(f"\n[4/4] 格式化为 JSON...")
+    
+    import json
+    # 将模型转为字典并手动处理 duration 格式
+    stores_data = []
+    for store in state['analysis_results']:
+        s_dict = store.model_dump()
+        for t in s_dict['time']:
+            d = t['duration']
+            # 将秒转换为 mm.ss 字符串格式
+            t['duration'] = f"{d // 60}.{d % 60:02d}"
+        stores_data.append(s_dict)
+        
+    # 生成最终 JSON 字符串
+    json_output = json.dumps({"stores": stores_data}, indent=2, ensure_ascii=False)
+    print("      JSON 格式化完成")
+    return {"final_json": json_output}
+
+# --- 5. 构建图 (LangGraph) ---
+
+workflow = StateGraph(AgentState)
+
+workflow.add_node("geocode", geocode_node)
+workflow.add_node("search", calculate_center_and_search_node)
+workflow.add_node("evaluate", evaluate_compromise_node)
+workflow.add_node("format", format_output_node)
+
+workflow.set_entry_point("geocode")
+workflow.add_edge("geocode", "search")
+workflow.add_edge("search", "evaluate")
+workflow.add_edge("evaluate", "format")
+workflow.add_edge("format", END)
+
+app = workflow.compile()
+
+# --- 6. 执行入口 ---
+
+async def main():
+    inputs = {
+        "user_request": "寻找驾驶时间最折中的地点",
+        "poi_type": "麦当劳",
+        "num_needed": 3,
+        "origin_addresses": ["虹桥火车站", "复旦大学杨浦校区", "上海市徐汇区虹梅路街道钦江路102号"]
     }
+    
+    async for event in app.astream(inputs):
+        pass # 日志已经在节点内部打印
+    
+    # 打印最终结果
+    final_state = await app.ainvoke(inputs)
+    print("\n" + "="*50)
+    print("【 最终推荐结果 】")
+    print(final_state['final_json'])
+    print("="*50)
+
+if __name__ == "__main__":
+    asyncio.run(main())
