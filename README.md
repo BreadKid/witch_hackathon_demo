@@ -50,9 +50,5 @@
 
 
 ### 后端
-- 语言python
-- **FastAPI**: 用于构建API服务。
-- **Pydantic**: 用于数据校验和模型定义。
-- **OpenAI Library**: 用于调用deepseek-chat模型生成推荐数据。
--  **Zeabur**: 用于后端接口公网部署
+[技术栈文档](https://github.com/BreadKid/witch_hackathon_demo/blob/dev/backend.md)
 
