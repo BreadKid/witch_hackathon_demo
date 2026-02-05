@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 import httpx
 import json
 import time as time_module
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from langgraph.graph import StateGraph, END
+
+from fetch_library_info_sh import generate_library_files
 
 load_dotenv()
 
@@ -309,6 +311,34 @@ async def get_stores(request: StoreRequest):
 @app.get("/health")
 async def health_check():
     return {"status": "pass", "timestamp": time_module.time()}
+
+
+@app.put("/flush/library")
+async def get_library(
+    location: str = Query(..., description="位置标识，目前仅支持 SH"),
+):
+    """
+    触发一次图书馆接口抓取，并生成带日期后缀的 JSON 文件。
+
+    - 请求参数:
+      - location: 必填，目前要求为 'SH'
+    - 生成文件示例(以当日日期为后缀):
+      - library_info.raw.yyyymmdd.json
+      - library_info.yyyymmdd.json
+    """
+    # 校验 location
+    if location.upper() != "SH":
+        raise HTTPException(status_code=400, detail="暂仅支持 location=SH")
+
+    try:
+        # generate_library_files 为同步函数，这里放到线程池中执行，避免阻塞事件循环
+        result = await asyncio.to_thread(generate_library_files)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"生成图书馆数据文件失败: {e}")
+
+    return {
+        "count": result["count"]
+    }
 
 if __name__ == "__main__":
     import uvicorn
